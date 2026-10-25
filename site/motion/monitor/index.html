@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=1024, height=576" />
     <title>Program monitor</title>
     <script src="assets/vendor/gsap-3.14.2.min.js"></script>
+    <!-- The HyperFrames runtime, loaded here so the site's player can deliver runtime data
+         (the grade channel); the player only injects it on its own for compositions it can't
+         drive directly. The CLI's preview and render bring their own. -->
+    <script src="assets/vendor/hyperframes-runtime-0.8.198.js"></script>
     <style>
       * {
         margin: 0;

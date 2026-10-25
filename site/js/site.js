@@ -211,7 +211,7 @@ function startMonitor() {
     const player = document.createElement("hyperframes-player");
     player.id = "monitor-player";
     player.setAttribute("aria-hidden", "true");
-    player.setAttribute("runtime-src", new URL("vendor/hyperframes-runtime-0.8.198.js", location.href).href);
+    player.setAttribute("runtime-src", new URL("motion/monitor/assets/vendor/hyperframes-runtime-0.8.198.js", location.href).href);
     player.setAttribute("disable-click-to-play", "");
     player.setAttribute("assets-loading-ui", "none");
     player.setAttribute("muted", "");
