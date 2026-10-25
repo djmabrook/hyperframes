@@ -1,0 +1,10 @@
+{
+  "name": "site-monitor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "../../../bin/hf preview",
+    "check": "../../../bin/hf check --json",
+    "snapshot": "../../../bin/hf snapshot --at 0.5,6,12,19.5"
+  }
+}

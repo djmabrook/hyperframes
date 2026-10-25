@@ -17,6 +17,13 @@ const SW = 32; // screen width, units
 const SH = 18; // screen height
 const PX = 128; // texture pixels per unit
 const MON = { x: 8.25, y: 0.75, w: 13.5, h: 7.6 }; // program monitor picture, screen units
+const VIEW = { x: 23.3, y: 1.15, w: 6.2, h: 3.4875 }; // the colour page's viewer: the same picture
+
+/** Timeline ruler span (screen units): where the playhead runs, start to end of the picture. */
+export const TIMELINE = { x0: 2.8, x1: SW - 0.6, top: 10.0, bottom: 17.85 };
+/** Colour wheels on the colour page, in order lift, gamma, gain, offset. */
+export const WHEELS = [0, 1, 2, 3].map((k) => ({ x: 24.9 + k * 2.0, y: 6.75, r: 0.9 }));
+export const PUCK_REACH = 0.7; // how far a wheel's puck travels from centre
 
 const clamp01 = (x) => Math.min(1, Math.max(0, x));
 const smooth = (x) => x * x * (3 - 2 * x);
@@ -68,7 +75,7 @@ function paintChrome() {
   };
   panel(0.15, 0.6, 6.7, 8.8); // bins
   panel(7.0, 0.6, 15.9, 8.8); // program monitor
-  panel(23.05, 0.6, 8.8, 4.35); // scopes
+  panel(23.05, 0.6, 8.8, 4.35); // colour page viewer and scope
   panel(23.05, 5.05, 8.8, 4.35); // colour wheels
   panel(0.15, 9.6, SW - 0.3, 8.25); // timeline
 
@@ -110,22 +117,23 @@ function paintChrome() {
   g.fillRect(cx - 1.25 * PX, cy - 0.12 * PX, 0.06 * PX, 0.24 * PX);
   g.fillRect(cx + 1.2 * PX, cy - 0.12 * PX, 0.06 * PX, 0.24 * PX);
 
-  // Scopes: RGB parade.
-  R(23.3, 1.15, 8.3, 3.6, "#0a0b0c");
+  // Colour page: viewer (a live mesh over this well) beside an RGB parade.
+  R(VIEW.x, VIEW.y, VIEW.w, VIEW.h, "#0a0b0c");
+  R(29.7, 1.15, 1.9, 3.6, "#0a0b0c");
   g.globalCompositeOperation = "lighter";
   const parade = ["rgba(255,70,60,", "rgba(70,230,110,", "rgba(70,140,255,"];
   parade.forEach((col, k) => {
-    const x0 = 23.45 + k * 2.75;
-    for (let i = 0; i < 2200; i++) {
+    const x0 = 29.78 + k * 0.6;
+    for (let i = 0; i < 900; i++) {
       const x = rand();
       const base = 0.55 + 0.25 * Math.sin(x * 6 + k) - 0.2 * Math.exp(-((x - 0.5) ** 2) / 0.02);
       const y = clamp01(base + (rand() - 0.5) * 0.35 * rand());
       g.fillStyle = col + (0.25 + rand() * 0.4) + ")";
-      g.fillRect((x0 + x * 2.55) * PX, (1.3 + y * 3.3) * PX, 3, 3);
+      g.fillRect((x0 + x * 0.52) * PX, (1.3 + y * 3.3) * PX, 3, 3);
     }
   });
   g.globalCompositeOperation = "source-over";
-  for (let i = 0; i <= 4; i++) R(23.3, 1.3 + i * 0.825, 8.3, 0.012, "rgba(255,255,255,0.12)");
+  for (let i = 0; i <= 4; i++) R(29.7, 1.3 + i * 0.825, 1.9, 0.012, "rgba(255,255,255,0.12)");
 
   // Colour wheels.
   for (let k = 0; k < 4; k++) {
@@ -151,8 +159,7 @@ function paintChrome() {
     g.fill();
     R(x - 0.01, y - r + 0.15, 0.02, 2 * r - 0.3, "rgba(255,255,255,0.08)");
     R(x - r + 0.15, y - 0.01, 2 * r - 0.3, 0.02, "rgba(255,255,255,0.08)");
-    const a = rand() * Math.PI * 2;
-    R(x + Math.cos(a) * 0.25 - 0.06, y + Math.sin(a) * 0.25 - 0.06, 0.12, 0.12, "#f2f2f2", 0.06);
+    rand(); // the puck is a live mesh now; keep the layout's random sequence
     R(x - r, y + r + 0.3, 2 * r, 0.06, "#2c2e34", 0.03);
     R(x - r + rand() * 1.4, y + r + 0.25, 0.16, 0.16, "#b9bdc4", 0.08);
     mono(["0.00", "1.00", "1.00", "0.00"][k], x - 0.25, y + r + 0.75, 0.16, "#9aa0a8");
@@ -250,6 +257,8 @@ const MONITOR_FRAG = /* glsl */ `
   uniform float uPlay;
   uniform float uVideoMix;
   uniform sampler2D uVideo;
+  uniform float uPictureMix;
+  uniform sampler2D uPicture;
   varying vec2 vUv;
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -312,6 +321,8 @@ const MONITOR_FRAG = /* glsl */ `
     float ph = exp(-abs(uv.x - uPlay) * 900.0);
     col += vec3(0.6, 0.95, 1.0) * ph * 0.9;
     col = pow(max(col, 0.0), vec3(2.2)); // authored in sRGB; the output stage re-encodes
+    // The HyperFrames monitor composition, once the page has it playing.
+    col = mix(col, texture2D(uPicture, uv).rgb, uPictureMix);
     vec3 video = texture2D(uVideo, uv).rgb;
     col = mix(col, video, uVideoMix);
     gl_FragColor = vec4(col, 1.0);
@@ -367,7 +378,7 @@ const SHOTS = [
   { x: 14.6, y: 4.5, d: 4.6, yaw: -0.5, pitch: -0.1, roll: 0.07, focus: 0.5, blur: 9 }, // waveform close-up
   { x: 15.0, y: 4.9, d: 17, yaw: -0.3, pitch: -0.04, roll: 0.035, focus: 0.47, blur: 6 }, // monitor and interface
   { x: 16.5, y: 13.2, d: 7.5, yaw: -0.5, pitch: -0.18, roll: 0.06, focus: 0.5, blur: 8 }, // timeline, film strip
-  { x: 27.3, y: 5.2, d: 7.2, yaw: 0.42, pitch: 0.06, roll: -0.04, focus: 0.5, blur: 7 }, // scopes and wheels
+  { x: 27.6, y: 4.7, d: 8.6, yaw: 0.42, pitch: 0.06, roll: -0.04, focus: 0.5, blur: 7 }, // colour page: viewer and wheels
   { x: 16.0, y: 9.2, d: 25, yaw: -0.16, pitch: 0.42, roll: 0.02, focus: 0.55, blur: 3.5 }, // whole screen
 ];
 
@@ -375,9 +386,10 @@ const SHOTS = [
  * @param {object} o
  * @param {HTMLCanvasElement} o.canvas
  * @param {THREE.Texture} [o.video] texture for the reel on the program monitor
+ * @param {THREE.Texture} [o.picture] the program monitor picture (the site's HyperFrames composition)
  * @param {number} [o.pixelRatio]
  */
-export function createWorkspace({ canvas, video, pixelRatio = 1 }) {
+export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(pixelRatio);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -398,6 +410,7 @@ export function createWorkspace({ canvas, video, pixelRatio = 1 }) {
   scene.add(bezel);
 
   if (video) video.colorSpace = THREE.SRGBColorSpace;
+  if (picture) picture.colorSpace = THREE.SRGBColorSpace;
   const monitorMat = new THREE.ShaderMaterial({
     vertexShader: BASIC_VERT,
     fragmentShader: MONITOR_FRAG,
@@ -406,11 +419,16 @@ export function createWorkspace({ canvas, video, pixelRatio = 1 }) {
       uPlay: { value: 0 },
       uVideoMix: { value: 0 },
       uVideo: { value: video || new THREE.Texture() },
+      uPictureMix: { value: 0 },
+      uPicture: { value: picture || new THREE.Texture() },
     },
   });
   const monitor = new THREE.Mesh(new THREE.PlaneGeometry(MON.w, MON.h), monitorMat);
   monitor.position.copy(toWorld(MON.x + MON.w / 2, MON.y + MON.h / 2, 0.01));
   scene.add(monitor);
+  const viewer = new THREE.Mesh(new THREE.PlaneGeometry(VIEW.w, VIEW.h), monitorMat);
+  viewer.position.copy(toWorld(VIEW.x + VIEW.w / 2, VIEW.y + VIEW.h / 2, 0.01));
+  scene.add(viewer);
 
   // Playheads: one across the timeline, glowing.
   const phMat = new THREE.MeshBasicMaterial({ color: "#5fb2ff", transparent: true, opacity: 0.95 });
@@ -424,6 +442,18 @@ export function createWorkspace({ canvas, video, pixelRatio = 1 }) {
   const phHead = new THREE.Mesh(new THREE.CircleGeometry(0.14, 3), phMat);
   phHead.rotation.z = -Math.PI / 2;
   scene.add(phHead);
+
+  // Colour wheel pucks.
+  const pucks = WHEELS.map((w) => {
+    const puck = new THREE.Mesh(new THREE.CircleGeometry(0.065, 24), new THREE.MeshBasicMaterial({ color: "#f2f2f2" }));
+    puck.position.copy(toWorld(w.x, w.y, 0.02));
+    scene.add(puck);
+    return puck;
+  });
+  /** @param {number[][]} offsets per wheel, [dx, dy] in screen units from centre */
+  function setWheels(offsets) {
+    offsets.forEach(([dx, dy], k) => pucks[k].position.copy(toWorld(WHEELS[k].x + dx, WHEELS[k].y + dy, 0.02)));
+  }
 
   // Dust motes catching the monitor light.
   const rand = seeded(23);
@@ -480,6 +510,23 @@ export function createWorkspace({ canvas, video, pixelRatio = 1 }) {
     pointer.y = y;
   }
 
+  // Where the pointer meets the screen, in screen units (null when it misses).
+  const ray = new THREE.Raycaster();
+  const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+  const hit = new THREE.Vector3();
+  function pick(ndcX, ndcY) {
+    ray.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
+    if (!ray.ray.intersectPlane(plane, hit)) return null;
+    const x = hit.x + SW / 2;
+    const y = SH / 2 - hit.y;
+    return x >= 0 && x <= SW && y >= 0 && y <= SH ? { x, y } : null;
+  }
+
+  let playheadAt = null; // 0..1 along the timeline, or null to drift
+  let pictureMix = 0;
+  const setPlayhead = (f) => (playheadAt = f);
+  const setPictureMix = (m) => (pictureMix = m);
+
   const look = new THREE.Vector3();
   /**
    * @param {number} s     scroll position in stops, 0..STOPS-1
@@ -509,8 +556,10 @@ export function createWorkspace({ canvas, video, pixelRatio = 1 }) {
     camera.up.set(Math.sin(shot.roll), Math.cos(shot.roll), 0);
     camera.lookAt(look.copy(t));
 
-    // The playhead sweeps the timeline as you scroll, and drifts on its own.
-    const phX = 2.8 + ((s / (STOPS - 1)) * 0.8 + 0.08 + time * 0.004) % 1 * (SW - 3.4);
+    // The playhead follows the monitor picture when the page drives it; otherwise it sweeps the
+    // timeline as you scroll, and drifts on its own.
+    const at = playheadAt ?? ((s / (STOPS - 1)) * 0.8 + 0.08 + time * 0.004) % 1;
+    const phX = mix(TIMELINE.x0, TIMELINE.x1, at);
     playhead.position.copy(toWorld(phX, 13.75, 0.03));
     phGlow.position.copy(toWorld(phX, 13.75, 0.025));
     phHead.position.copy(toWorld(phX, 10.0, 0.035));
@@ -518,6 +567,7 @@ export function createWorkspace({ canvas, video, pixelRatio = 1 }) {
     monitorMat.uniforms.uTime.value = time;
     monitorMat.uniforms.uPlay.value = 0.12 + ((time * 0.05 + s * 0.2) % 0.8);
     monitorMat.uniforms.uVideoMix.value = reel;
+    monitorMat.uniforms.uPictureMix.value = pictureMix;
 
     dust.rotation.z = time * 0.01;
     dust.position.y = Math.sin(time * 0.2) * 0.2;
@@ -532,5 +582,5 @@ export function createWorkspace({ canvas, video, pixelRatio = 1 }) {
     renderer.render(lensScene, lensCam);
   }
 
-  return { render, setSize, setPointer, renderer };
+  return { render, setSize, setPointer, setPlayhead, setPictureMix, setWheels, pick, renderer };
 }
