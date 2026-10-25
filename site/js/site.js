@@ -9,6 +9,7 @@ const body = document.body;
 const params = new URLSearchParams(location.search);
 if (params.has("clean")) body.classList.add("clean");
 document.getElementById("year").textContent = String(new Date().getFullYear());
+if (FEATURES.lowerThird) import("./lower-third.js");
 
 // ---------- Viewer ----------
 const viewer = document.getElementById("viewer");
