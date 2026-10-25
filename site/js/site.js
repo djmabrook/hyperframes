@@ -3,6 +3,7 @@
 // The program monitor plays a HyperFrames composition (motion/monitor): drag along the timeline
 // to scrub it, and drag a colour wheel's puck to grade it, gently.
 import { createWorkspace, STOPS, THREE, TIMELINE, WHEELS, PUCK_REACH } from "../motion/workspace/scene.js";
+import { FEATURES } from "./features.js";
 
 const body = document.body;
 const params = new URLSearchParams(location.search);
@@ -100,9 +101,9 @@ async function start() {
   const overPage = (e) => e.target instanceof Element && e.target.closest(".panel, .slate, button, a, dialog");
   const handleAt = (p) => {
     if (!p) return null;
-    const k = WHEELS.findIndex((w) => Math.hypot(p.x - w.x, p.y - w.y) < w.r);
+    const k = FEATURES.grade ? WHEELS.findIndex((w) => Math.hypot(p.x - w.x, p.y - w.y) < w.r) : -1;
     if (k >= 0) return { wheel: k };
-    if (p.y > TIMELINE.top && p.y < TIMELINE.bottom && p.x > TIMELINE.x0 - 0.1 && p.x < TIMELINE.x1 + 0.3) return { timeline: true };
+    if (FEATURES.scrub && p.y > TIMELINE.top && p.y < TIMELINE.bottom && p.x > TIMELINE.x0 - 0.1 && p.x < TIMELINE.x1 + 0.3) return { timeline: true };
     return null;
   };
   const toFraction = (p) => Math.min(1, Math.max(0, (p.x - TIMELINE.x0) / (TIMELINE.x1 - TIMELINE.x0)));
