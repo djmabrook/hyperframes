@@ -1,10 +1,10 @@
 {
-  "name": "site-opener",
+  "name": "site-filmstrip",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "../../../bin/hf preview",
     "check": "../../../bin/hf check --json",
-    "snapshot": "../../../bin/hf snapshot --at 0,1,2,3,3.6,5,6.9"
+    "snapshot": "../../../bin/hf snapshot --at 0.5,2.9,4.6,6.2,7.4,11.5"
   }
 }
