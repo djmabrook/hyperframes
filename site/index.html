@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Mohamed Elsafty · Documentary &amp; Commercial Editor</title>
+    <meta
+      name="description"
+      content="Mohamed Elsafty is a documentary and commercial editor based in Brooklyn, NY. Selected work, credits and availability."
+    />
+    <meta name="theme-color" content="#100f0d" />
+    <meta property="og:title" content="Mohamed Elsafty · Documentary &amp; Commercial Editor" />
+    <meta property="og:description" content="Documentary and commercial editor based in Brooklyn, NY." />
+    <meta property="og:image" content="media/placeholder-poster.jpg" />
+    <link rel="preload" href="fonts/fraunces-latin-300-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="css/site.css" />
+    <script src="vendor/hyperframes-player-0.8.198.global.js" defer></script>
+    <script type="module" src="js/site.js"></script>
+  </head>
+  <body>
+    <!-- Live Three.js stage behind the whole page. Driven by scroll in js/site.js. -->
+    <canvas id="stage" aria-hidden="true"></canvas>
+    <!-- Shown instead of the stage when WebGL is missing or motion is reduced. -->
+    <div id="stage-fallback" aria-hidden="true">
+      <video id="fallback-video" muted loop playsinline preload="none" poster="media/placeholder-poster.jpg">
+        <source src="media/placeholder.mp4" type="video/mp4" />
+      </video>
+    </div>
+
+    <header class="nav">
+      <a class="nav-mark" href="#top">Mohamed Elsafty</a>
+      <nav aria-label="Sections">
+        <a href="#work">Work</a>
+        <a href="#process">Process</a>
+        <a href="#credits">Credits</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <a class="status" href="#contact"><span class="dot" aria-hidden="true"></span>Available now</a>
+    </header>
+
+    <main>
+      <!-- 01 · Hero: the HyperFrames opener plays live over the stage, then the reel fades in behind it. -->
+      <section id="top" class="hero" data-stage="0">
+        <h1 class="sr-only">Mohamed Elsafty, Documentary and Commercial Editor, Brooklyn, NY</h1>
+        <div class="opener-wrap" aria-hidden="true">
+          <hyperframes-player
+            id="opener"
+            src="motion/opener/index.html?embed"
+            runtime-src="vendor/hyperframe-runtime-0.8.198.iife.js"
+            muted
+            audio-locked
+            disable-click-to-play
+            assets-loading-ui="none"
+          ></hyperframes-player>
+        </div>
+        <div class="hero-actions">
+          <button class="btn btn-solid" type="button" data-play="reel">Watch the reel</button>
+          <a class="btn" href="#contact">Get in touch</a>
+        </div>
+        <a class="scroll-cue" href="#work" aria-label="Scroll to selected work"><span></span></a>
+      </section>
+
+      <!-- 02 · Work: the list on the left drives the floating panels on the stage. -->
+      <section id="work" class="section work" data-stage="1">
+        <div class="col">
+          <p class="kicker">Selected work</p>
+          <h2 class="title">Ten films, <em>cut</em> for story.</h2>
+          <ol class="work-list">
+            <li>
+              <button type="button" data-play="0">
+                <span class="num">01</span>
+                <span class="w-title">Rajie Cook Documentary</span>
+                <span class="w-meta"><span class="tag">Recent</span> Documentary</span>
+              </button>
+            </li>
+            <!-- PLACEHOLDER: replace 02–10 with real projects (title, kind, link). -->
+            <li><button type="button" data-play="1"><span class="num">02</span><span class="w-title ph">Placeholder project</span><span class="w-meta">Commercial</span></button></li>
+            <li><button type="button" data-play="2"><span class="num">03</span><span class="w-title ph">Placeholder project</span><span class="w-meta">Documentary</span></button></li>
+            <li><button type="button" data-play="3"><span class="num">04</span><span class="w-title ph">Placeholder project</span><span class="w-meta">Commercial</span></button></li>
+            <li><button type="button" data-play="4"><span class="num">05</span><span class="w-title ph">Placeholder project</span><span class="w-meta">Documentary</span></button></li>
+            <li><button type="button" data-play="5"><span class="num">06</span><span class="w-title ph">Placeholder project</span><span class="w-meta">Commercial</span></button></li>
+            <li><button type="button" data-play="6"><span class="num">07</span><span class="w-title ph">Placeholder project</span><span class="w-meta">Documentary</span></button></li>
+            <li><button type="button" data-play="7"><span class="num">08</span><span class="w-title ph">Placeholder project</span><span class="w-meta">Commercial</span></button></li>
+            <li><button type="button" data-play="8"><span class="num">09</span><span class="w-title ph">Placeholder project</span><span class="w-meta">Documentary</span></button></li>
+            <li><button type="button" data-play="9"><span class="num">10</span><span class="w-title ph">Placeholder project</span><span class="w-meta">Commercial</span></button></li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- 03 · Process: the panels line up as cuts on a timeline. Copy is a draft for Mohamed to rewrite. -->
+      <section id="process" class="section process" data-stage="2">
+        <div class="col wide">
+          <p class="kicker">Process</p>
+          <h2 class="title">From rushes <em>to</em> picture lock.</h2>
+          <ol class="steps ph-block">
+            <li><span class="num">01</span><h3>Log</h3><p>Every hour of footage watched, marked and searchable before the first cut.</p></li>
+            <li><span class="num">02</span><h3>Select</h3><p>The moments that carry the story, pulled and ordered.</p></li>
+            <li><span class="num">03</span><h3>Cut</h3><p>Structure first, then rhythm: picture and sound built together.</p></li>
+            <li><span class="num">04</span><h3>Finish</h3><p>Picture lock, then every delivery the release needs.</p></li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- 04 · Credits: six temp credits to set the format. Replace with real credits. -->
+      <section id="credits" class="section credits" data-stage="3">
+        <div class="col center">
+          <p class="kicker">Credits</p>
+          <h2 class="title">Selected <em>credits</em></h2>
+          <table class="credit-table ph-block">
+            <thead>
+              <tr><th scope="col">Title</th><th scope="col">Role</th><th scope="col">Client / Network</th><th scope="col">Year</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Temp Credit One</th><td>Editor</td><td>Network Name</td><td>20XX</td></tr>
+              <tr><th scope="row">Temp Credit Two</th><td>Editor</td><td>Brand Name</td><td>20XX</td></tr>
+              <tr><th scope="row">Temp Credit Three</th><td>Additional Editor</td><td>Streamer Name</td><td>20XX</td></tr>
+              <tr><th scope="row">Temp Credit Four</th><td>Editor</td><td>Agency / Brand</td><td>20XX</td></tr>
+              <tr><th scope="row">Temp Credit Five</th><td>Assistant Editor</td><td>Network Name</td><td>20XX</td></tr>
+              <tr><th scope="row">Temp Credit Six</th><td>Editor</td><td>Festival / Distributor</td><td>20XX</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 05 · Contact and availability. -->
+      <section id="contact" class="section contact" data-stage="4">
+        <div class="col center">
+          <p class="kicker"><span class="dot" aria-hidden="true"></span>Available now</p>
+          <h2 class="title big">Let's <em>cut</em> something.</h2>
+          <p class="lede">Documentary and commercial editing, based in Brooklyn, NY.</p>
+          <p class="now">Currently cutting: <strong>Rajie Cook Documentary</strong></p>
+          <a class="email" href="mailto:mohamed@proxymedia.org">mohamed@proxymedia.org</a>
+          <ul class="links">
+            <!-- PLACEHOLDER: real profile URLs -->
+            <li><a class="ph" href="#" rel="me">IMDb</a></li>
+            <li><a class="ph" href="#" rel="me">LinkedIn</a></li>
+            <li><a class="ph" href="#" rel="me">Instagram</a></li>
+          </ul>
+        </div>
+        <footer class="foot">
+          <span>© <span id="year">2026</span> Mohamed Elsafty</span>
+          <span>Brooklyn, NY</span>
+        </footer>
+      </section>
+    </main>
+
+    <dialog id="viewer" aria-label="Video">
+      <button class="close" type="button" aria-label="Close">×</button>
+      <p class="viewer-title"></p>
+      <!-- PLACEHOLDER: every slot plays the same clip until real videos are added. -->
+      <video controls playsinline preload="none" poster="media/placeholder-poster.jpg">
+        <source src="media/placeholder.mp4" type="video/mp4" />
+      </video>
+    </dialog>
+  </body>
+</html>
