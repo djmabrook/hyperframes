@@ -6,8 +6,8 @@
     <title>Program monitor</title>
     <script src="assets/vendor/gsap-3.14.2.min.js"></script>
     <!-- The HyperFrames runtime, loaded here so the site's player can deliver runtime data
-         (the grade channel); the player only injects it on its own for compositions it can't
-         drive directly. The CLI's preview and render bring their own. -->
+         (the grade and cue channels); the player only injects it on its own for compositions
+         it can't drive directly. The CLI's preview and render bring their own. -->
     <script src="assets/vendor/hyperframes-runtime-0.8.198.js"></script>
     <style>
       * {
@@ -39,7 +39,7 @@
     <!-- The program monitor picture on the site's workspace: the dusk horizon with its glowing
          waveform, recorded left to right as the playhead crosses it. The site plays this with
          <hyperframes-player>, scrubs it from the timeline playhead (seek), and grades it from the
-         colour wheels over the "grade" runtime-data channel. The look matches the fallback
+         colour wheels over the "grade" runtime-data channel, and cues Work bin projects over "cue". The look matches the fallback
          shader in ../workspace/scene.js, which the site uses when this can't load. -->
     <div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1024" data-height="576">
       <canvas id="picture" width="1024" height="576"></canvas>
@@ -59,6 +59,9 @@
         uniform vec3 uGamma;
         uniform vec3 uGain;
         uniform vec3 uOffset;
+        uniform vec3 uTint;
+        uniform float uTintMix;
+        uniform float uSeed;
 
         float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 
@@ -90,7 +93,8 @@
         float waveAt(vec2 uv, float shift) {
           float x = uv.x + shift;
           float horizon = 0.455 + (x - 0.5) * 0.07;
-          float env = exp(-pow((x - 0.47) / 0.13, 2.0)) * 0.11 + exp(-pow((x - 0.62) / 0.06, 2.0)) * 0.06 + 0.006;
+          float c = (uSeed - 0.5) * 0.3; // each cued clip has its own waveform
+          float env = exp(-pow((x - 0.47 - c) / 0.13, 2.0)) * 0.11 + exp(-pow((x - 0.62 + c * 0.6) / 0.06, 2.0)) * 0.06 + 0.006;
           float col = floor(x * 520.0);
           float h = env * (0.25 + 0.75 * hash(vec2(col, floor(uTime * 12.0))));
           float dy = abs(uv.y - horizon);
@@ -105,6 +109,8 @@
           vec3 col = dusk(uv);
           col += vec3(0.55, 0.62, 1.0) * vec3(waveAt(uv, 0.0025) * 0.8, waveAt(uv, 0.0), waveAt(uv, -0.0025) * 1.25);
           col += vec3(0.6, 0.95, 1.0) * exp(-abs(uv.x - uPlay) * 900.0) * 0.9;
+          // A cued clip takes on its bin label colour.
+          col = mix(col, col * (0.45 + uTint * 0.9), uTintMix);
           // Primaries, as on the colour page: lift, gamma, gain, offset.
           col = clamp(col, 0.0, 1.0);
           col = col * uGain + uLift * (1.0 - col);
@@ -135,6 +141,7 @@
 
       // Neutral grade until the page sends one.
       const grade = { lift: [0, 0, 0], gamma: [1, 1, 1], gain: [1, 1, 1], offset: [0, 0, 0] };
+      const cue = { tint: [1, 1, 1], mix: 0, seed: 0.5 };
       const clock = { t: 0 };
       const draw = () => {
         gl.uniform1f(u("uTime"), clock.t);
@@ -143,6 +150,9 @@
         gl.uniform3fv(u("uGamma"), grade.gamma);
         gl.uniform3fv(u("uGain"), grade.gain);
         gl.uniform3fv(u("uOffset"), grade.offset);
+        gl.uniform3fv(u("uTint"), cue.tint);
+        gl.uniform1f(u("uTintMix"), cue.mix);
+        gl.uniform1f(u("uSeed"), cue.seed);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       };
       draw();
@@ -158,6 +168,13 @@
         if (!window.__hyperframes?.registerRuntimeDataHandler) return setTimeout(listen, 50);
         window.__hyperframes.registerRuntimeDataHandler("grade", (g) => {
           for (const k of Object.keys(grade)) if (Array.isArray(g?.[k]) && g[k].length === 3) grade[k] = g[k].map(Number);
+          draw();
+        });
+        // A project hovered in the site's Work bin: its label colour and waveform.
+        window.__hyperframes.registerRuntimeDataHandler("cue", (c) => {
+          if (Array.isArray(c?.tint) && c.tint.length === 3) cue.tint = c.tint.map(Number);
+          if (Number.isFinite(c?.mix)) cue.mix = c.mix;
+          if (Number.isFinite(c?.seed)) cue.seed = c.seed;
           draw();
         });
       };

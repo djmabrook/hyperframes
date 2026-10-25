@@ -4,6 +4,7 @@
 // to scrub it, and drag a colour wheel's puck to grade it, gently.
 import { createWorkspace, STOPS, THREE, TIMELINE, WHEELS, PUCK_REACH } from "../motion/workspace/scene.js";
 import { FEATURES } from "./features.js";
+import { setupBinPreviews } from "./bin-previews.js";
 
 const body = document.body;
 const params = new URLSearchParams(location.search);
@@ -66,6 +67,7 @@ async function start() {
     pixelRatio: Math.min(devicePixelRatio || 1, 1.75),
   });
   const monitor = startMonitor();
+  const binPreviews = FEATURES.binPreviews ? setupBinPreviews({ ws, monitor }) : null;
   const resize = () => ws.setSize(innerWidth, innerHeight);
   addEventListener("resize", resize);
   resize();
@@ -174,6 +176,7 @@ async function start() {
     if (m.canvas) pictureTex.needsUpdate = true;
     ws.setPictureMix(m.mix);
     ws.setPlayhead(m.fraction);
+    binPreviews?.(dt);
     let moved = false;
     puck.forEach((p, k) => {
       for (const i of [0, 1]) {
@@ -260,6 +263,14 @@ function startMonitor() {
     },
     grade(g) {
       if (ready()) state.player.setRuntimeData("grade", g);
+    },
+    send(channel, data) {
+      if (ready()) state.player.setRuntimeData(channel, data);
+    },
+    restart() {
+      if (!ready() || state.scrubbing) return;
+      state.player.seek(0);
+      state.player.play();
     },
   };
 }

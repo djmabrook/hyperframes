@@ -526,6 +526,8 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
   let pictureMix = 0;
   const setPlayhead = (f) => (playheadAt = f);
   const setPictureMix = (m) => (pictureMix = m);
+  let peek = 0; // 0..1, how far the camera leans toward the monitor shot
+  const setPeek = (p) => (peek = p);
 
   const look = new THREE.Vector3();
   /**
@@ -540,7 +542,7 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
     const a = SHOTS[k];
     const b = SHOTS[k + 1];
     const shot = {};
-    for (const key of Object.keys(a)) shot[key] = mix(a[key], b[key], e);
+    for (const key of Object.keys(a)) shot[key] = mix(mix(a[key], b[key], e), SHOTS[1][key], peek);
 
     // Narrow screens need more distance to fit the same subject.
     const fit = Math.max(1, 1.5 / camera.aspect);
@@ -582,5 +584,5 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
     renderer.render(lensScene, lensCam);
   }
 
-  return { render, setSize, setPointer, setPlayhead, setPictureMix, setWheels, pick, renderer };
+  return { render, setSize, setPointer, setPlayhead, setPictureMix, setPeek, setWheels, pick, renderer };
 }
