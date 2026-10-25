@@ -5,6 +5,7 @@
 import { createWorkspace, STOPS, THREE, TIMELINE, WHEELS, PUCK_REACH } from "../motion/workspace/scene.js";
 import { FEATURES } from "./features.js";
 import { setupBinPreviews } from "./bin-previews.js";
+import { setupLiveScopes } from "./live-scopes.js";
 
 const body = document.body;
 const params = new URLSearchParams(location.search);
@@ -68,6 +69,7 @@ async function start() {
   });
   const monitor = startMonitor();
   const binPreviews = FEATURES.binPreviews ? setupBinPreviews({ ws, monitor }) : null;
+  const liveScopes = FEATURES.liveScopes ? setupLiveScopes({ ws, monitor }) : null;
   const resize = () => ws.setSize(innerWidth, innerHeight);
   addEventListener("resize", resize);
   resize();
@@ -177,6 +179,7 @@ async function start() {
     ws.setPictureMix(m.mix);
     ws.setPlayhead(m.fraction);
     binPreviews?.(dt);
+    liveScopes?.();
     let moved = false;
     puck.forEach((p, k) => {
       for (const i of [0, 1]) {
@@ -237,6 +240,7 @@ function startMonitor() {
 
   return {
     ready,
+    canvas: () => state.canvas,
     frame(dt) {
       const p = state.player;
       if (p && !state.canvas && p.ready) {

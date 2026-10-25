@@ -526,6 +526,18 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
   let pictureMix = 0;
   const setPlayhead = (f) => (playheadAt = f);
   const setPictureMix = (m) => (pictureMix = m);
+  // A live scope over the painted parade on the colour page, when the page provides one.
+  let scopeMesh = null;
+  function setScope(texture) {
+    if (!scopeMesh) {
+      scopeMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 3.6), new THREE.MeshBasicMaterial());
+      scopeMesh.position.copy(toWorld(29.7 + 0.95, 1.15 + 1.8, 0.01));
+      scene.add(scopeMesh);
+    }
+    scopeMesh.material.map = texture;
+    scopeMesh.material.needsUpdate = true;
+  }
+
   let peek = 0; // 0..1, how far the camera leans toward the monitor shot
   const setPeek = (p) => (peek = p);
 
@@ -584,5 +596,5 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
     renderer.render(lensScene, lensCam);
   }
 
-  return { render, setSize, setPointer, setPlayhead, setPictureMix, setPeek, setWheels, pick, renderer };
+  return { render, setSize, setPointer, setPlayhead, setPictureMix, setPeek, setScope, setWheels, pick, renderer };
 }
