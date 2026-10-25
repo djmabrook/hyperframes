@@ -1,0 +1,12 @@
+{
+  "name": "01-title-card",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "../../bin/hf preview",
+    "lint": "../../bin/hf lint",
+    "check": "../../bin/hf check --json",
+    "snapshot": "../../bin/hf snapshot --at 0,0.85,1.7,2.3,4,7.9",
+    "render": "../../bin/hf render --quality looks --output renders/title-card.mp4"
+  }
+}

@@ -1,0 +1,29 @@
+# Renders and exports: delivered outside git (attach to the PR / thread instead)
+renders/
+out/
+*.mp4
+*.mov
+*.webm
+*.gif
+*.mkv
+*.m4v
+
+# Large source media: keep out of git unless an asset is small and licensed (see each project's ASSETS.md)
+*.wav
+*.aif
+*.aiff
+*.flac
+*.psd
+*.exr
+
+# HyperFrames local machine state (history pointer, check/snapshot artifacts, locks, proxies)
+.hyperframes/
+.thumbnails/
+
+# Node and tooling
+node_modules/
+.npm/
+*.log
+.DS_Store
+.env
+.env.*

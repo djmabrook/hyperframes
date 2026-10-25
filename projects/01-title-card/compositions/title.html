@@ -1,0 +1,182 @@
+<html
+  data-composition-variables='[
+    {"id":"kicker","type":"string","label":"Kicker","default":"HYPERFRAMES · EXERCISE 01"},
+    {"id":"line1","type":"string","label":"Headline, first words","default":"Every frame,"},
+    {"id":"line2","type":"string","label":"Headline, accent words","default":"on time."},
+    {"id":"ground","type":"color","label":"Ground","default":"#0e1116"},
+    {"id":"ink","type":"color","label":"Ink","default":"#f2ede4"},
+    {"id":"accent","type":"color","label":"Accent","default":"#ff5a36"}
+  ]'
+>
+  <template>
+    <style>
+      #root {
+        position: absolute;
+        inset: 0;
+        background: var(--ground, #0e1116);
+        color: var(--ink, #f2ede4);
+        font-family: "Inter", sans-serif;
+      }
+
+      /* Title block, left-aligned inside title-safe. */
+      #title-block {
+        position: absolute;
+        left: 240px;
+        top: 330px;
+        width: 1440px;
+      }
+      #title-kicker {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        color: #8a8f98;
+      }
+      #title-rule {
+        width: 220px;
+        height: 6px;
+        margin: 36px 0 44px;
+        background: var(--accent, #ff5a36);
+        transform-origin: left center;
+      }
+      #title-headline {
+        font-size: 150px;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.045em;
+        white-space: nowrap;
+      }
+      #title-headline .word {
+        display: inline-block;
+        margin-right: 0.22em;
+      }
+      #title-headline .accent {
+        color: var(--accent, #ff5a36);
+      }
+      #title-subline {
+        margin-top: 44px;
+        font-size: 44px;
+        font-weight: 400;
+        letter-spacing: -0.01em;
+      }
+      #title-subline .word {
+        display: inline-block;
+        margin-right: 0.25em;
+      }
+
+      /* Frame strip: 30 ticks = one second at 30 fps; the lit tick is the current frame. */
+      #title-strip {
+        position: absolute;
+        left: 240px;
+        right: 240px;
+        bottom: 150px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+      }
+      #title-ticks {
+        display: flex;
+        gap: 14px;
+        align-items: flex-end;
+      }
+      #title-ticks i {
+        display: block;
+        width: 6px;
+        height: 22px;
+        background: #2a2f38;
+      }
+      #title-ticks i:nth-child(5n + 1) {
+        height: 38px;
+      }
+      #title-ticks i.on {
+        background: var(--accent, #ff5a36);
+      }
+      #title-timecode {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: #8a8f98;
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+
+    <div id="root" data-composition-id="title" data-width="1920" data-height="1080">
+      <div id="title-block">
+        <div id="title-kicker" data-var-text="kicker">HYPERFRAMES · EXERCISE 01</div>
+        <div id="title-rule"></div>
+        <h1 id="title-headline">
+          <span id="title-hw1" class="word" data-var-text="line1">Every frame,</span
+          ><span id="title-hw2" class="word accent" data-var-text="line2">on time.</span>
+        </h1>
+        <p id="title-subline">
+          <span class="word">Rendered</span><span class="word">by</span
+          ><span class="word">seeking,</span><span class="word">never</span
+          ><span class="word">by</span><span class="word">playing.</span>
+        </p>
+      </div>
+
+      <div id="title-strip">
+        <div id="title-ticks"></div>
+        <div id="title-timecode">00:00:00:00</div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const FPS = 30;
+        const DURATION = 8;
+
+        // Static tick marks, built once before the timeline.
+        const ticksEl = document.getElementById("title-ticks");
+        for (let i = 0; i < FPS; i++) ticksEl.appendChild(document.createElement("i"));
+        const ticks = Array.from(ticksEl.children);
+        const timecodeEl = document.getElementById("title-timecode");
+        const pad = (n) => String(n).padStart(2, "0");
+
+        // The readout is a pure function of timeline time.
+        function drawClock(t) {
+          const frame = Math.min(Math.floor(t * FPS + 1e-6), DURATION * FPS - 1);
+          const f = frame % FPS;
+          timecodeEl.textContent = `00:00:${pad(Math.floor(frame / FPS))}:${pad(f)}`;
+          ticks.forEach((el, i) => el.classList.toggle("on", i === f));
+        }
+
+        const tl = gsap.timeline({ paused: true });
+        const clock = { t: 0 };
+
+        // Clock runs linearly across the whole piece.
+        tl.fromTo(
+          clock,
+          { t: 0 },
+          { t: DURATION, duration: DURATION, ease: "none", onUpdate: () => drawClock(clock.t) },
+          0,
+        );
+
+        // Kicker and frame strip are on screen from frame 0 (the thumbnail frame).
+        // Rule draws from the left on a long tail.
+        tl.fromTo("#title-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "expo.out" }, 0.3);
+
+        // Headline: per word, blur and opacity, no translate.
+        tl.fromTo(
+          "#title-headline .word",
+          { opacity: 0, filter: "blur(10px)" },
+          { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out", stagger: 0.22 },
+          0.7,
+        );
+
+        // Subline: per word from dim to full ink, no position change.
+        tl.fromTo(
+          "#title-subline .word",
+          { opacity: 0.15 },
+          { opacity: 1, duration: 0.25, ease: "power2.out", stagger: 0.09 },
+          1.5,
+        );
+        tl.fromTo("#title-subline", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none" }, 1.5);
+
+        // Everything lands by ~2.3 s, then holds dead still to the end.
+        window.__timelines["title"] = tl;
+      })();
+    </script>
+  </template>
+</html>
