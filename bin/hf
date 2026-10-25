@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Run the HyperFrames CLI through the Claude plugin's bundled launcher.
+# The launcher pins the CLI to the plugin's release, so do not swap this for `npx hyperframes`.
+# Run it from inside a project folder, e.g. `cd projects/01-title-card && ../../bin/hf check --json`.
+set -euo pipefail
+
+version="${HF_PLUGIN_VERSION:-0.8.198}"
+root="${HF_PLUGIN_ROOT:-$HOME/.claude/plugins/cache/hyperframes/hyperframes/$version}"
+launcher="$root/skills/hyperframes/scripts/plugin-cli.mjs"
+
+if [[ ! -f "$launcher" ]]; then
+  echo "hf: plugin launcher not found at $launcher" >&2
+  echo "hf: install it with: claude plugin marketplace add heygen-com/hyperframes && claude plugin install hyperframes@hyperframes" >&2
+  echo "hf: or point HF_PLUGIN_VERSION / HF_PLUGIN_ROOT at the installed release" >&2
+  exit 1
+fi
+
+exec node "$launcher" "$@"
