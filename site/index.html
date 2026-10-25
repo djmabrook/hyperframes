@@ -5,84 +5,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Mohamed Elsafty · Editor, Documentary and Commercial</title>
     <meta name="description" content="Mohamed Elsafty. Editor, Documentary and Commercial. Brooklyn, NY." />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#050506" />
     <meta property="og:title" content="Mohamed Elsafty · Editor, Documentary and Commercial" />
     <meta property="og:description" content="Editor, Documentary and Commercial. Brooklyn, NY." />
     <link rel="preload" href="fonts/inter-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/jetbrains-mono-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="css/site.css" />
     <script type="module" src="js/site.js"></script>
   </head>
   <body>
-    <!-- Background and the Three.js film strip, fixed behind the page. -->
-    <div id="bg" aria-hidden="true"><div id="bg-glow"></div><div id="bg-vignette"></div></div>
-    <canvas id="strip" aria-hidden="true"></canvas>
+    <!-- The 3D editing workspace, fixed behind the page and flown through by scroll. -->
+    <canvas id="ws" aria-hidden="true"></canvas>
+    <div id="ws-fallback" aria-hidden="true"></div>
 
     <main>
-      <!-- The opening: scrolling through this runway plays the cut (and reverses it). -->
-      <section id="opening">
-        <div class="pin">
-          <div class="hero">
-            <!-- PLACEHOLDER: hero montage -->
-            <button class="hero-video" type="button" data-play="reel" aria-label="Play reel">
-              <video id="hero-video" muted loop playsinline preload="none" poster="media/placeholder-poster.jpg">
-                <source src="media/placeholder.mp4" type="video/mp4" />
-              </video>
-            </button>
-            <h1 class="name">Mohamed Elsafty</h1>
-            <p class="role">Editor, Documentary and Commercial</p>
-            <p class="meta">Brooklyn, NY · <span class="avail"><span class="dot" aria-hidden="true"></span>Available now</span></p>
-          </div>
+      <section id="top" class="stop" data-stop="0">
+        <div class="slate">
+          <h1 class="name">Mohamed Elsafty</h1>
+          <p class="role">Editor, Documentary and Commercial</p>
+          <p class="meta">Brooklyn, NY <span class="sep">·</span> <span class="avail"><span class="rec" aria-hidden="true"></span>Available now</span></p>
         </div>
       </section>
 
-      <section id="work" class="block">
-        <h2 class="label">Work</h2>
-        <ul class="grid">
-          <li>
-            <button type="button" data-play="0">
-              <img src="media/placeholder-poster.jpg" alt="" loading="lazy" />
-              <span class="t">Rajie Cook Documentary</span>
-              <span class="s">Recent work</span>
-            </button>
-          </li>
-          <!-- PLACEHOLDER: projects 02–10 -->
-          <li class="ph"><button type="button" data-play="1"><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 02</span></button></li>
-          <li class="ph"><button type="button" data-play="2"><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 03</span></button></li>
-          <li class="ph"><button type="button" data-play="3"><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 04</span></button></li>
-          <li class="ph"><button type="button" data-play="4"><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 05</span></button></li>
-          <li class="ph"><button type="button" data-play="5"><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 06</span></button></li>
-          <li class="ph"><button type="button" data-play="6"><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 07</span></button></li>
-          <li class="ph"><button type="button" data-play="7"><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 08</span></button></li>
-          <li class="ph"><button type="button" data-play="8"><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 09</span></button></li>
-          <li class="ph"><button type="button" data-play="9"><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 10</span></button></li>
-        </ul>
+      <section id="reel" class="stop" data-stop="1">
+        <!-- PLACEHOLDER: hero montage plays on the program monitor -->
+        <button class="play ph" type="button" data-play="reel"><span class="tri" aria-hidden="true"></span>Reel</button>
       </section>
 
-      <section id="credits" class="block">
-        <h2 class="label">Credits</h2>
-        <!-- PLACEHOLDER: temp credits -->
-        <table class="credits ph">
-          <tbody>
-            <tr><th scope="row">Temp Credit One</th><td>Editor</td><td>Network Name</td><td>20XX</td></tr>
-            <tr><th scope="row">Temp Credit Two</th><td>Editor</td><td>Brand Name</td><td>20XX</td></tr>
-            <tr><th scope="row">Temp Credit Three</th><td>Additional Editor</td><td>Streamer Name</td><td>20XX</td></tr>
-            <tr><th scope="row">Temp Credit Four</th><td>Editor</td><td>Agency / Brand</td><td>20XX</td></tr>
-            <tr><th scope="row">Temp Credit Five</th><td>Assistant Editor</td><td>Network Name</td><td>20XX</td></tr>
-            <tr><th scope="row">Temp Credit Six</th><td>Editor</td><td>Festival / Distributor</td><td>20XX</td></tr>
-          </tbody>
-        </table>
+      <section id="work" class="stop" data-stop="2">
+        <div class="panel right">
+          <div class="tabs"><h2 class="tab">Work</h2></div>
+          <ul class="bin">
+            <li><button type="button" data-play="0"><span class="chip" style="--c: #f2a541"></span><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Rajie Cook Documentary</span><span class="s">Recent work</span></button></li>
+            <!-- PLACEHOLDER: projects 02–10 -->
+            <li class="ph"><button type="button" data-play="1"><span class="chip" style="--c: #9b8ad6"></span><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 02</span></button></li>
+            <li class="ph"><button type="button" data-play="2"><span class="chip" style="--c: #5a7be0"></span><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 03</span></button></li>
+            <li class="ph"><button type="button" data-play="3"><span class="chip" style="--c: #22b3a5"></span><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 04</span></button></li>
+            <li class="ph"><button type="button" data-play="4"><span class="chip" style="--c: #c79fe0"></span><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 05</span></button></li>
+            <li class="ph"><button type="button" data-play="5"><span class="chip" style="--c: #2e9be6"></span><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 06</span></button></li>
+            <li class="ph"><button type="button" data-play="6"><span class="chip" style="--c: #4c9a4c"></span><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 07</span></button></li>
+            <li class="ph"><button type="button" data-play="7"><span class="chip" style="--c: #e06a9a"></span><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 08</span></button></li>
+            <li class="ph"><button type="button" data-play="8"><span class="chip" style="--c: #e6d84a"></span><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 09</span></button></li>
+            <li class="ph"><button type="button" data-play="9"><span class="chip" style="--c: #e04a4a"></span><img src="media/placeholder-poster.jpg" alt="" loading="lazy" /><span class="t">Placeholder 10</span></button></li>
+          </ul>
+        </div>
       </section>
 
-      <section id="contact" class="block">
-        <h2 class="label">Contact</h2>
-        <a class="email" href="mailto:mohamed@proxymedia.org">mohamed@proxymedia.org</a>
-        <ul class="links">
-          <!-- PLACEHOLDER: profile URLs -->
-          <li><a class="ph" href="#" rel="me">IMDb</a></li>
-          <li><a class="ph" href="#" rel="me">LinkedIn</a></li>
-          <li><a class="ph" href="#" rel="me">Instagram</a></li>
-        </ul>
-        <p class="foot">© <span id="year">2026</span> Mohamed Elsafty</p>
+      <section id="credits" class="stop" data-stop="3">
+        <div class="panel left">
+          <div class="tabs"><h2 class="tab">Credits</h2></div>
+          <!-- PLACEHOLDER: temp credits -->
+          <table class="meta-table ph">
+            <tbody>
+              <tr><th scope="row">Temp Credit One</th><td>Editor</td><td>Network Name</td><td class="tc">20XX</td></tr>
+              <tr><th scope="row">Temp Credit Two</th><td>Editor</td><td>Brand Name</td><td class="tc">20XX</td></tr>
+              <tr><th scope="row">Temp Credit Three</th><td>Additional Editor</td><td>Streamer Name</td><td class="tc">20XX</td></tr>
+              <tr><th scope="row">Temp Credit Four</th><td>Editor</td><td>Agency / Brand</td><td class="tc">20XX</td></tr>
+              <tr><th scope="row">Temp Credit Five</th><td>Assistant Editor</td><td>Network Name</td><td class="tc">20XX</td></tr>
+              <tr><th scope="row">Temp Credit Six</th><td>Editor</td><td>Festival / Distributor</td><td class="tc">20XX</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="contact" class="stop" data-stop="4">
+        <div class="panel center">
+          <div class="tabs"><h2 class="tab">Contact</h2></div>
+          <div class="contact-body">
+            <a class="email" href="mailto:mohamed@proxymedia.org">mohamed@proxymedia.org</a>
+            <ul class="links">
+              <!-- PLACEHOLDER: profile URLs -->
+              <li><a class="ph" href="#" rel="me">IMDb</a></li>
+              <li><a class="ph" href="#" rel="me">LinkedIn</a></li>
+              <li><a class="ph" href="#" rel="me">Instagram</a></li>
+            </ul>
+            <p class="foot">© <span id="year">2026</span> Mohamed Elsafty</p>
+          </div>
+        </div>
       </section>
     </main>
 

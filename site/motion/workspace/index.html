@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Editing workspace</title>
+    <script src="assets/vendor/gsap-3.14.2.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "JetBrains Mono";
+        font-weight: 500;
+        src: url("assets/fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2");
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #050506;
+      }
+      #root {
+        position: absolute;
+        inset: 0;
+        background: #050506;
+      }
+      #ws-canvas {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- The site's workspace, flown through top to bottom over 16 s (the page flies it from scroll).
+         Same scene module as the website; this host maps timeline time to the scroll stop. -->
+    <div id="root" data-composition-id="main" data-start="0" data-duration="16" data-width="1920" data-height="1080">
+      <canvas id="ws-canvas" width="1920" height="1080"></canvas>
+    </div>
+    <script type="module">
+      import { createWorkspace, STOPS, loadTexture } from "./scene.js";
+
+      const DURATION = 16;
+      await document.fonts.load('500 20px "JetBrains Mono"');
+      const poster = await loadTexture("assets/placeholder-poster.jpg");
+      const ws = createWorkspace({ canvas: document.getElementById("ws-canvas"), video: poster });
+      ws.setSize(1920, 1080);
+
+      // A paused GSAP timeline is the clock: seeking it draws the frame for that time.
+      const clock = { t: 0 };
+      const draw = () => {
+        const s = Math.min(STOPS - 1, (clock.t / (DURATION - 2)) * (STOPS - 1));
+        ws.render(s, clock.t, Math.min(1, Math.max(0, (s - 0.6) / 0.4)) * (s < 1.6 ? 1 : 0));
+      };
+      draw();
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo(clock, { t: 0 }, { t: DURATION, duration: DURATION, ease: "none", onUpdate: draw }, 0);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
