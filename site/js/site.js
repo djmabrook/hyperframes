@@ -4,6 +4,7 @@
 // to scrub it, and drag a colour wheel's puck to grade it, gently.
 import { createWorkspace, STOPS, THREE, TIMELINE, WHEELS, PUCK_REACH } from "../motion/workspace/scene.js";
 import { FEATURES } from "./features.js";
+import { CLIPS } from "./clips.js";
 import { setupBinPreviews } from "./bin-previews.js";
 import { setupLiveScopes } from "./live-scopes.js";
 
@@ -13,16 +14,74 @@ if (params.has("clean")) body.classList.add("clean");
 document.getElementById("year").textContent = String(new Date().getFullYear());
 if (FEATURES.lowerThird) import("./lower-third.js");
 
+// ---------- Clip bin ----------
+// Each tab's list is built from js/clips.js. A clip's button carries its tab and index.
+for (const list of document.querySelectorAll("[data-bin]")) {
+  const tab = list.dataset.bin;
+  CLIPS[tab].forEach((clip, i) => {
+    const li = document.createElement("li");
+    if (clip.placeholder !== false) li.className = "ph";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.clip = `${tab}:${i}`;
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.style.setProperty("--c", clip.colour || "#8b9099");
+    const img = document.createElement("img");
+    img.src = clip.poster || "";
+    img.alt = "";
+    img.loading = "lazy";
+    const title = document.createElement("span");
+    title.className = "t";
+    title.textContent = clip.title;
+    button.append(chip, img, title);
+    if (clip.note) {
+      const note = document.createElement("span");
+      note.className = "s";
+      note.textContent = clip.note;
+      button.append(note);
+    }
+    li.append(button);
+    list.append(li);
+  });
+}
+const clipOf = (el) => {
+  const [tab, i] = el.dataset.clip.split(":");
+  return CLIPS[tab][Number(i)];
+};
+
+// Tabs: click, or arrow keys between them.
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+const selectTab = (tab) => {
+  for (const t of tabs) {
+    const on = t === tab;
+    t.setAttribute("aria-selected", String(on));
+    t.tabIndex = on ? 0 : -1;
+    document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+  }
+};
+tabs.forEach((t, i) => {
+  t.addEventListener("click", () => selectTab(t));
+  t.addEventListener("keydown", (e) => {
+    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (!step) return;
+    const next = tabs[(i + step + tabs.length) % tabs.length];
+    selectTab(next);
+    next.focus();
+  });
+});
+
 // ---------- Viewer ----------
+// Plays a clip full size, in a dialog.
 const viewer = document.getElementById("viewer");
 const viewerVideo = viewer.querySelector("video");
-document.querySelectorAll("[data-play]").forEach((el) =>
-  el.addEventListener("click", () => {
-    viewer.showModal();
-    viewerVideo.currentTime = 0;
-    viewerVideo.play().catch(() => {});
-  }),
-);
+const openViewer = (clip) => {
+  viewerVideo.poster = clip.poster || "";
+  viewerVideo.src = clip.video;
+  viewer.showModal();
+  viewerVideo.play().catch(() => {});
+};
+document.querySelectorAll("[data-clip]").forEach((el) => el.addEventListener("click", () => openViewer(clipOf(el))));
 viewer.querySelector(".close").addEventListener("click", () => viewer.close());
 viewer.addEventListener("close", () => viewerVideo.pause());
 viewer.addEventListener("click", (e) => {
