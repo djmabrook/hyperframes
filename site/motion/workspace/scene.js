@@ -17,7 +17,7 @@ const SW = 32; // screen width, units
 const SH = 18; // screen height
 const PX = 128; // texture pixels per unit
 const MON = { x: 8.25, y: 0.75, w: 13.5, h: 7.6 }; // program monitor picture, screen units
-const VIEW = { x: 23.3, y: 1.15, w: 6.2, h: 3.4875 }; // the colour page's viewer: the same picture
+const VIEW = { x: 23.3, y: 1.15, w: 6.2, h: 3.4875 }; // the colour page's viewer
 
 /** Timeline ruler span (screen units): where the playhead runs, start to end of the picture. */
 export const TIMELINE = { x0: 2.8, x1: SW - 0.6, top: 10.0, bottom: 17.85 };
@@ -411,22 +411,27 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
 
   if (video) video.colorSpace = THREE.SRGBColorSpace;
   if (picture) picture.colorSpace = THREE.SRGBColorSpace;
-  const monitorMat = new THREE.ShaderMaterial({
-    vertexShader: BASIC_VERT,
-    fragmentShader: MONITOR_FRAG,
-    uniforms: {
-      uTime: { value: 0 },
-      uPlay: { value: 0 },
-      uVideoMix: { value: 0 },
-      uVideo: { value: video || new THREE.Texture() },
-      uPictureMix: { value: 0 },
-      uPicture: { value: picture || new THREE.Texture() },
-    },
-  });
+  // The program monitor and the colour page's viewer share the picture; only the program
+  // monitor plays the hero.
+  const screenMat = (videoTex) =>
+    new THREE.ShaderMaterial({
+      vertexShader: BASIC_VERT,
+      fragmentShader: MONITOR_FRAG,
+      uniforms: {
+        uTime: { value: 0 },
+        uPlay: { value: 0 },
+        uVideoMix: { value: 0 },
+        uVideo: { value: videoTex || new THREE.Texture() },
+        uPictureMix: { value: 0 },
+        uPicture: { value: picture || new THREE.Texture() },
+      },
+    });
+  const monitorMat = screenMat(video);
+  const viewerMat = screenMat(null);
   const monitor = new THREE.Mesh(new THREE.PlaneGeometry(MON.w, MON.h), monitorMat);
   monitor.position.copy(toWorld(MON.x + MON.w / 2, MON.y + MON.h / 2, 0.01));
   scene.add(monitor);
-  const viewer = new THREE.Mesh(new THREE.PlaneGeometry(VIEW.w, VIEW.h), monitorMat);
+  const viewer = new THREE.Mesh(new THREE.PlaneGeometry(VIEW.w, VIEW.h), viewerMat);
   viewer.position.copy(toWorld(VIEW.x + VIEW.w / 2, VIEW.y + VIEW.h / 2, 0.01));
   scene.add(viewer);
 
@@ -578,10 +583,12 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
     phGlow.position.copy(toWorld(phX, 13.75, 0.025));
     phHead.position.copy(toWorld(phX, 10.0, 0.035));
 
-    monitorMat.uniforms.uTime.value = time;
-    monitorMat.uniforms.uPlay.value = 0.12 + ((time * 0.05 + s * 0.2) % 0.8);
+    for (const m of [monitorMat, viewerMat]) {
+      m.uniforms.uTime.value = time;
+      m.uniforms.uPlay.value = 0.12 + ((time * 0.05 + s * 0.2) % 0.8);
+      m.uniforms.uPictureMix.value = pictureMix;
+    }
     monitorMat.uniforms.uVideoMix.value = reel;
-    monitorMat.uniforms.uPictureMix.value = pictureMix;
 
     dust.rotation.z = time * 0.01;
     dust.position.y = Math.sin(time * 0.2) * 0.2;
