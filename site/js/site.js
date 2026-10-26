@@ -50,9 +50,9 @@ async function start() {
   // The interface texture uses the mono face for its timecodes.
   await document.fonts.load('500 20px "JetBrains Mono"').catch(() => {});
 
-  // One video plays the reel on the program monitor (placeholder for now).
+  // One video plays the hero montage on the program monitor.
   const reel = document.createElement("video");
-  reel.src = "media/placeholder.mp4";
+  reel.src = "media/hero.mp4";
   reel.muted = true;
   reel.loop = true;
   reel.playsInline = true;
