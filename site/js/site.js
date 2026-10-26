@@ -193,14 +193,17 @@ async function start() {
       monitor.grade(gradeFrom(puck));
     }
 
-    // The reel takes over the program monitor on the way into the second stop.
-    const reelMix = Math.min(1, Math.max(0, (s - 0.55) / 0.4)) * (1 - Math.min(1, Math.max(0, (s - 1.6) / 0.4)));
+    // The hero takes over the program monitor on the way into the second stop and keeps
+    // playing from there, dimming as you scroll on toward the bottom.
+    const reelMix = Math.min(1, Math.max(0, (s - 0.55) / 0.4));
+    const fade = Math.min(1, Math.max(0, (s - 1.2) / (STOPS - 1 - 1.2)));
+    const dim = 1 - 0.9 * fade * fade * (3 - 2 * fade);
     if ((reelMix > 0) !== playing) {
       playing = reelMix > 0;
       if (playing) reel.play().catch(() => {});
       else reel.pause();
     }
-    ws.render(s, (now - t0) / 1000, reelMix);
+    ws.render(s, (now - t0) / 1000, reelMix, dim);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

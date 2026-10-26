@@ -259,6 +259,7 @@ const MONITOR_FRAG = /* glsl */ `
   uniform sampler2D uVideo;
   uniform float uPictureMix;
   uniform sampler2D uPicture;
+  uniform float uDim;
   varying vec2 vUv;
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -325,6 +326,7 @@ const MONITOR_FRAG = /* glsl */ `
     col = mix(col, texture2D(uPicture, uv).rgb, uPictureMix);
     vec3 video = texture2D(uVideo, uv).rgb;
     col = mix(col, video, uVideoMix);
+    col *= uDim;
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
@@ -424,6 +426,7 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
         uVideo: { value: videoTex || new THREE.Texture() },
         uPictureMix: { value: 0 },
         uPicture: { value: picture || new THREE.Texture() },
+        uDim: { value: 1 },
       },
     });
   const monitorMat = screenMat(video);
@@ -551,8 +554,9 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
    * @param {number} s     scroll position in stops, 0..STOPS-1
    * @param {number} time  seconds, for the waveform and lights
    * @param {number} reel  0..1, how far the reel has replaced the dusk on the monitor
+   * @param {number} dim   0..1, the program monitor's brightness
    */
-  function render(s, time = 0, reel = 0) {
+  function render(s, time = 0, reel = 0, dim = 1) {
     s = Math.min(STOPS - 1, Math.max(0, s));
     const k = Math.min(STOPS - 2, Math.floor(s));
     const e = smooth(clamp01(s - k));
@@ -589,6 +593,7 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
       m.uniforms.uPictureMix.value = pictureMix;
     }
     monitorMat.uniforms.uVideoMix.value = reel;
+    monitorMat.uniforms.uDim.value = dim;
 
     dust.rotation.z = time * 0.01;
     dust.position.y = Math.sin(time * 0.2) * 0.2;
