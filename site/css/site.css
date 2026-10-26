@@ -221,7 +221,8 @@ button.tab:focus-visible {
   cursor: pointer;
 }
 .bin button:hover,
-.bin button:focus-visible {
+.bin button:focus-visible,
+.bin button[aria-current="true"] {
   background: var(--select);
 }
 .bin li.ph {

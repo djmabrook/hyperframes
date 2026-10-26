@@ -7,6 +7,7 @@ import { FEATURES } from "./features.js";
 import { CLIPS } from "./clips.js";
 import { setupBinPreviews } from "./bin-previews.js";
 import { setupLiveScopes } from "./live-scopes.js";
+import { setupClipViewer } from "./clip-viewer.js";
 
 const body = document.body;
 const params = new URLSearchParams(location.search);
@@ -72,7 +73,8 @@ tabs.forEach((t, i) => {
 });
 
 // ---------- Viewer ----------
-// Plays a clip full size, in a dialog.
+// Plays a clip full size, in a dialog, unless the workspace's viewer takes it (feature clipViewer).
+let sendToViewer = null;
 const viewer = document.getElementById("viewer");
 const viewerVideo = viewer.querySelector("video");
 const openViewer = (clip) => {
@@ -81,7 +83,9 @@ const openViewer = (clip) => {
   viewer.showModal();
   viewerVideo.play().catch(() => {});
 };
-document.querySelectorAll("[data-clip]").forEach((el) => el.addEventListener("click", () => openViewer(clipOf(el))));
+document.querySelectorAll("[data-clip]").forEach((el) =>
+  el.addEventListener("click", () => (sendToViewer ? sendToViewer(el, clipOf(el)) : openViewer(clipOf(el)))),
+);
 viewer.querySelector(".close").addEventListener("click", () => viewer.close());
 viewer.addEventListener("close", () => viewerVideo.pause());
 viewer.addEventListener("click", (e) => {
@@ -129,6 +133,8 @@ async function start() {
   const monitor = startMonitor();
   const binPreviews = FEATURES.binPreviews ? setupBinPreviews({ ws, monitor }) : null;
   const liveScopes = FEATURES.liveScopes ? setupLiveScopes({ ws, monitor }) : null;
+  const clipViewer = FEATURES.clipViewer ? setupClipViewer({ ws }) : null;
+  if (clipViewer) sendToViewer = clipViewer.send;
   const resize = () => ws.setSize(innerWidth, innerHeight);
   addEventListener("resize", resize);
   resize();
@@ -239,6 +245,7 @@ async function start() {
     ws.setPlayhead(m.fraction);
     binPreviews?.(dt);
     liveScopes?.();
+    clipViewer?.frame(dt);
     let moved = false;
     puck.forEach((p, k) => {
       for (const i of [0, 1]) {
@@ -256,7 +263,7 @@ async function start() {
     // playing from there, dimming as you scroll on toward the bottom.
     const reelMix = Math.min(1, Math.max(0, (s - 0.55) / 0.4));
     const fade = Math.min(1, Math.max(0, (s - 1.2) / (STOPS - 1 - 1.2)));
-    const dim = 1 - 0.9 * fade * fade * (3 - 2 * fade);
+    const dim = 1 - 0.94 * fade * fade * (3 - 2 * fade);
     if ((reelMix > 0) !== playing) {
       playing = reelMix > 0;
       if (playing) reel.play().catch(() => {});

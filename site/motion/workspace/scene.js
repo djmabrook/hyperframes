@@ -17,7 +17,8 @@ const SW = 32; // screen width, units
 const SH = 18; // screen height
 const PX = 128; // texture pixels per unit
 const MON = { x: 8.25, y: 0.75, w: 13.5, h: 7.6 }; // program monitor picture, screen units
-const VIEW = { x: 23.3, y: 1.15, w: 6.2, h: 3.4875 }; // the colour page's viewer
+/** The colour page's viewer, the smaller monitor on the right, in screen units. */
+export const VIEW = { x: 23.3, y: 1.15, w: 6.2, h: 3.4875 };
 
 /** Timeline ruler span (screen units): where the playhead runs, start to end of the picture. */
 export const TIMELINE = { x0: 2.8, x1: SW - 0.6, top: 10.0, bottom: 17.85 };
@@ -549,6 +550,45 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
   let peek = 0; // 0..1, how far the camera leans toward the monitor shot
   const setPeek = (p) => (peek = p);
 
+  // A clip playing on the viewer, and how far the camera has turned to frame it.
+  /** @param {THREE.Texture} texture */
+  function setClip(texture) {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    viewerMat.uniforms.uVideo.value = texture;
+  }
+  const setClipMix = (m) => (viewerMat.uniforms.uVideoMix.value = m);
+  let focus = 0;
+  let region = { x0: 0, x1: 0.5, y0: 0, y1: 1 };
+  /**
+   * @param {number} f  0..1, how far the camera has turned to the viewer
+   * @param {{x0: number, x1: number, y0: number, y1: number}} [r] the part of the window to frame
+   *   it in, as fractions from the top left
+   */
+  function setFocus(f, r) {
+    focus = f;
+    if (r) region = r;
+  }
+  // The shot that fits the viewer inside the region, seen nearly square on.
+  function viewerShot(fit) {
+    const tan = Math.tan((camera.fov * Math.PI) / 360);
+    const rw = (region.x1 - region.x0) * 0.74;
+    const rh = (region.y1 - region.y0) * 0.8;
+    const visH = Math.max(VIEW.h / rh, VIEW.w / (rw * camera.aspect));
+    const visW = visH * camera.aspect;
+    const rx = (region.x0 + region.x1) / 2;
+    const ry = (region.y0 + region.y1) / 2;
+    return {
+      x: VIEW.x + VIEW.w / 2 + (0.5 - rx) * visW,
+      y: VIEW.y + VIEW.h / 2 + (0.5 - ry) * visH,
+      d: visH / (2 * tan) / fit,
+      yaw: 0.03,
+      pitch: 0.02,
+      roll: -0.015,
+      focus: 1 - ry,
+      blur: 4,
+    };
+  }
+
   const look = new THREE.Vector3();
   /**
    * @param {number} s     scroll position in stops, 0..STOPS-1
@@ -567,6 +607,11 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
 
     // Narrow screens need more distance to fit the same subject.
     const fit = Math.max(1, 1.5 / camera.aspect);
+    if (focus > 0) {
+      const v = viewerShot(fit);
+      const f = smooth(clamp01(focus));
+      for (const key of Object.keys(v)) shot[key] = mix(shot[key], v[key], f);
+    }
     const t = toWorld(shot.x, shot.y);
     const yaw = shot.yaw + pointer.x * 0.04;
     const pitch = shot.pitch + pointer.y * 0.03;
@@ -608,5 +653,5 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
     renderer.render(lensScene, lensCam);
   }
 
-  return { render, setSize, setPointer, setPlayhead, setPictureMix, setPeek, setScope, setWheels, pick, renderer };
+  return { render, setSize, setPointer, setPlayhead, setPictureMix, setPeek, setClip, setClipMix, setFocus, setScope, setWheels, pick, renderer };
 }
