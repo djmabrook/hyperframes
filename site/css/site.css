@@ -376,9 +376,12 @@ button.tab:focus-visible {
   padding: 18px 16px;
 }
 .about-photo {
+  display: block;
+  width: 100%;
+  height: auto;
   aspect-ratio: 4 / 5;
+  object-fit: cover;
   border-radius: 3px;
-  background: var(--well) center / cover;
 }
 .about-text {
   margin: 0;
