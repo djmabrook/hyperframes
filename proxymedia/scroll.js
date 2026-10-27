@@ -54,6 +54,10 @@
     frame.style.width = `${W * scale}px`;
     frame.style.height = `${H * scale}px`;
     frame.classList.toggle("letterbox", H * scale < innerHeight - 1);
+    // The size above is the opening pose. Have the next tick re-apply the pose
+    // for the current scroll position, or a resize at the end of the sequence
+    // (iOS Safari's toolbar collapsing as you scroll) would jump to that size.
+    shown = -1;
     wake();
   }
   const fraction = () => Math.max(0, Math.min(1, scrollY / maxScroll));
