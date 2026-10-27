@@ -13,7 +13,11 @@
     ready = false;
   let maxScroll = 1,
     baseScale = 1,
-    coverScale = 1;
+    coverScale = 1,
+    endScale = 1;
+  // The punch lands on the photographed glass (508 composition px wide at the
+  // scene's 2.7x end zoom). Narrow screens fit that glass instead of cropping it.
+  const GLASS_END_WIDTH = 508 * 2.7;
   function compositionReady() {
     if (!player?.ready || !player.duration) return false;
     if (player.assetsReady) return true;
@@ -35,6 +39,7 @@
     // at the end, rather than cropping the cassette away at the start.
     coverScale = Math.max(innerWidth / W, innerHeight / H);
     const scale = (baseScale = Math.min(coverScale, innerWidth / (W * 0.42)));
+    endScale = Math.min(coverScale, innerWidth / (GLASS_END_WIDTH * 1.06));
     frame.style.width = `${W * scale}px`;
     frame.style.height = `${H * scale}px`;
     frame.classList.toggle("letterbox", H * scale < innerHeight - 1);
@@ -75,7 +80,7 @@
     if (Math.abs(current - shown) > 0.00001) {
       player.seek(current);
       const punch = Math.max(0, Math.min(1, (current / player.duration - 0.76) / 0.2));
-      const scale = baseScale + (coverScale - baseScale) * punch * punch * (3 - 2 * punch);
+      const scale = baseScale + (endScale - baseScale) * punch * punch * (3 - 2 * punch);
       frame.style.width = `${W * scale}px`;
       frame.style.height = `${H * scale}px`;
       frame.classList.toggle("letterbox", H * scale < innerHeight - 1);
@@ -87,6 +92,14 @@
       );
       document.body.dataset.sequenceComplete =
         current >= player.duration - 0.001 ? "true" : "false";
+      // The set powers on when the punch lands, and off again when scrolling
+      // back out. The CRT runs on its own clock; scroll only switches it.
+      const crt = player.iframeElement.contentWindow.__proxyCRT;
+      if (crt) {
+        crt.setViewScale(scale * devicePixelRatio);
+        if (current >= 13.7) crt.powerOn();
+        else if (current < 13.55) crt.powerOff();
+      }
     }
     if (current !== target) raf = requestAnimationFrame(tick);
   }
