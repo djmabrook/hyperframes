@@ -5,8 +5,11 @@
     H = 1080,
     VCR_Y = 1120,
     TV_Y = 2240,
-    DURATION = 14,
-    END_SCALE = 2.7;
+    DURATION = 14;
+  // Where the punch-in lands. The default frames the curved glass with a little
+  // bezel. Hosts whose frame is shorter than the screen (portrait phones) ask
+  // for the whole TV instead via setEnd(), so no edge of the set is cut off.
+  const end = { scale: 2.7, aimY: 496 };
   // Measured in the VCR photograph's 1920×1080 coordinate space. Keep the
   // cassette's entering cross-section inside the dark aperture, not its bezel.
   const SLOT = {
@@ -43,9 +46,9 @@
     // Aim at the original photographed glass; no dissolve to a different TV photograph.
     // Land with the whole curved glass and a little bezel in frame, so the CRT
     // reads as a tube rather than a flat fill.
-    const scale = Math.exp(Math.log(END_SCALE) * punch);
+    const scale = Math.exp(Math.log(end.scale) * punch);
     const cameraY = VCR_Y * approach + (TV_Y - VCR_Y) * tilt;
-    const aimY = mix(H / 2, 496, punch);
+    const aimY = mix(H / 2, end.aimY, punch);
     return {
       time: t,
       cameraY,
@@ -94,6 +97,11 @@
     duration: DURATION,
     state: null,
     slot: SLOT,
+    end,
+    setEnd(scale, aimY) {
+      end.scale = scale;
+      end.aimY = aimY;
+    },
     geometry: { lengthRatio: 103 / 187, thicknessRatio: 25 / 187 },
   };
   const clock = { time: 0 };
