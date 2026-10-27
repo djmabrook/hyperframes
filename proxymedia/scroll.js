@@ -49,6 +49,10 @@
   }
   function tick(now) {
     raf = 0;
+    // An unavailable 3D renderer keeps the static poster; never put a 2D
+    // stand-in underneath the live cassette. Stop polling after that result.
+    const model = player?.iframeElement?.contentWindow?.__proxyScene?.model;
+    if (model?.ready === false) return;
     if (!compositionReady()) {
       wake();
       return;

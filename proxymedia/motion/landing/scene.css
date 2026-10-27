@@ -48,14 +48,6 @@ body,
   opacity: 0;
   clip-path: inset(36.2% 33.7% 48.4% 33%);
 }
-#tape-shadow {
-  position: absolute;
-  left: 564px;
-  top: 297.5px;
-  width: 796.5px;
-  height: 490px;
-  will-change: transform, opacity;
-}
 #tape-mask {
   position: absolute;
   left: 0;
@@ -63,20 +55,6 @@ body,
   width: 1920px;
   height: 3400px;
   pointer-events: none;
-}
-#tape-fallback {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 630.5px;
-  height: 369px;
-  transform-origin: 50% 50%;
-  will-change: transform;
-}
-#tape-fallback img {
-  display: block;
-  width: 100%;
-  height: 100%;
 }
 #tape-model {
   position: absolute;
@@ -89,9 +67,6 @@ body,
 }
 #tape-mask.model-ready #tape-model {
   opacity: 1;
-}
-#tape-mask.model-ready #tape-fallback {
-  opacity: 0;
 }
 #screen-surface {
   position: absolute;

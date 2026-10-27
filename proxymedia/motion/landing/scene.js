@@ -6,11 +6,20 @@
     VCR_Y = 1120,
     TV_Y = 2240,
     DURATION = 14;
+  // Measured in the VCR photograph's 1920×1080 coordinate space. Keep the
+  // cassette's entering cross-section inside the dark aperture, not its bezel.
+  const SLOT = {
+    x: 951,
+    y: VCR_Y + 496,
+    left: 651,
+    right: 1251,
+    top: VCR_Y + 460,
+    bottom: VCR_Y + 534,
+  };
+  const TAPE_WIDTH = 580;
+  const PITCH = -64;
   const elements = Object.fromEntries(
-    ["world", "tape-fallback", "tape-mask", "tape-shadow", "vcr-closed"].map((id) => [
-      id,
-      document.getElementById(id),
-    ]),
+    ["world", "tape-mask", "vcr-closed"].map((id) => [id, document.getElementById(id)]),
   );
   const clamp = (v) => Math.max(0, Math.min(1, v));
   // Quintic interpolation has zero velocity AND acceleration at each endpoint.
@@ -25,6 +34,11 @@
     const insert = smooth(t, 5.55, 7.35);
     const tilt = smooth(t, 8.0, 10.8);
     const punch = smooth(t, 10.65, 13.7);
+    const geometry = window.__proxyScene.geometry;
+    const pitchRadians = (PITCH * Math.PI) / 180;
+    const tapeLength = TAPE_WIDTH * geometry.lengthRatio;
+    const projectedLength = tapeLength * Math.cos(pitchRadians);
+    const entryCenterY = SLOT.y + projectedLength / 2;
     // Aim at the original photographed glass; no dissolve to a different TV photograph.
     const scale = Math.exp(Math.log(4.05) * punch);
     const cameraY = VCR_Y * approach + (TV_Y - VCR_Y) * tilt;
@@ -39,30 +53,24 @@
       punch,
       tx: (W / 2) * (1 - scale),
       ty: H / 2 - scale * (cameraY + aimY),
-      x: mix(962.25, 949, approach),
-      y: mix(520, VCR_Y + 650, approach) - 250 * insert,
-      pitch: -64 * approach,
-      width: mix(630.5, 682, approach) * mix(1, 0.88, insert),
-      opacity: 1 - smooth(t, 7.15, 7.35),
+      x: mix(962.25, SLOT.x, approach),
+      // Translate one cassette length along its own insertion axis. The
+      // section crossing the VCR's front plane stays centered in the slot.
+      y: mix(520, entryCenterY, approach) - projectedLength * insert,
+      depth: -tapeLength * Math.sin(-pitchRadians) * insert,
+      pitch: PITCH * approach,
+      width: mix(630.5, TAPE_WIDTH, approach),
+      opacity: insert < 1 ? 1 : 0,
       flap: smooth(t, 7.35, 7.8),
-      shadow: 1 - smooth(t, 0.7, 2.0),
-      // Occlusion starts after settling; same continuous tape slides behind slot lip.
-      clipTop: t >= 5.55 ? VCR_Y + 533.5 : 0,
       complete: t >= 13.7,
     };
   }
   function renderAt(t) {
     const s = stateAt(t);
     elements.world.style.transform = `matrix(${s.scale},0,0,${s.scale},${s.tx},${s.ty})`;
-    const k = s.width / 630.5;
-    elements["tape-fallback"].style.transform =
-      `translate3d(${s.x - 315.25}px,${s.y - 184.5}px,0) perspective(1888px) rotateX(${s.pitch}deg) scale(${k})`;
     elements["tape-mask"].style.opacity = s.opacity;
-    elements["tape-mask"].style.clipPath = `inset(${s.clipTop}px 0 0 0)`;
-    elements["tape-shadow"].style.opacity = s.shadow;
-    elements["tape-shadow"].style.transform =
-      `translate(0,${s.approach * 80}px) scale(${1 + s.approach * 0.15})`;
-    // Animate only the flap patch, not a whole-frame dissolve with shifting texture.
+    // Occlusion is handled inside the 3D material at the insertion plane.
+    // A screen-space clip at the lower lip would put the tape under the slot.
     elements["vcr-closed"].style.opacity = s.flap;
     document.getElementById("root").dataset.phase = s.complete
       ? "screen"
@@ -77,7 +85,14 @@
     window.__proxyTapeRender?.(s);
     return t;
   }
-  window.__proxyScene = { stateAt, renderAt, duration: DURATION, state: null };
+  window.__proxyScene = {
+    stateAt,
+    renderAt,
+    duration: DURATION,
+    state: null,
+    slot: SLOT,
+    geometry: { lengthRatio: 103 / 187, thicknessRatio: 25 / 187 },
+  };
   const clock = { time: 0 };
   const tl = gsap.timeline({ paused: true });
   tl.to(
