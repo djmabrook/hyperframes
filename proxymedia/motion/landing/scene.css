@@ -1,0 +1,100 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #eeeae2;
+}
+#root,
+#world {
+  position: absolute;
+  inset: 0;
+}
+#world {
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.shot {
+  position: absolute;
+  left: 0;
+  width: 1920px;
+  height: 1080px;
+}
+.shot img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+#wall-shot {
+  top: 0;
+  mask-image: linear-gradient(#000 0%, #000 88%, transparent);
+}
+#vcr-shot {
+  top: 1120px;
+  mask-image: linear-gradient(transparent, #000 15%, #000 83%, transparent);
+}
+#tv-shot {
+  top: 2240px;
+  mask-image: linear-gradient(transparent, #000 15%, #000 90%, transparent);
+}
+#vcr-closed {
+  opacity: 0;
+  clip-path: inset(36.2% 33.7% 48.4% 33%);
+}
+#tape-shadow {
+  position: absolute;
+  left: 564px;
+  top: 297.5px;
+  width: 796.5px;
+  height: 490px;
+  will-change: transform, opacity;
+}
+#tape-mask {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 3400px;
+  pointer-events: none;
+}
+#tape-fallback {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 630.5px;
+  height: 369px;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+#tape-fallback img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+#tape-model {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 960px;
+  height: 640px;
+  opacity: 0;
+  will-change: transform;
+}
+#tape-mask.model-ready #tape-model {
+  opacity: 1;
+}
+#tape-mask.model-ready #tape-fallback {
+  opacity: 0;
+}
+#screen-surface {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
