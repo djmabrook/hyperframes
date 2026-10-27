@@ -5,8 +5,9 @@ export const FEATURES = {
   scrub: true, // drag along the timeline to scrub the monitor
   grade: true, // drag a colour wheel's puck to grade the monitor, gently
   lowerThird: true, // the name builds on like a lower third, and replays on hover
-  binPreviews: true, // hovering a project in the Work bin cues it on the monitor
+  binPreviews: false, // hovering a clip in the bin cues it on the monitor (the hero covers it now)
   liveScopes: true, // the parade on the colour page reads the monitor picture
+  clipViewer: true, // clicking a clip in the bin plays it on the smaller monitor on the right
 };
 
 const off = new URLSearchParams(location.search).get("off");

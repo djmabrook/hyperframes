@@ -11,13 +11,14 @@ export { THREE };
 
 /** Load an image as a texture (for hosts that show a still in place of the reel). */
 export const loadTexture = (url) => new THREE.TextureLoader().loadAsync(url);
-export const STOPS = 5; // hero, reel, work (timeline), credits (colour), contact (wide)
+export const STOPS = 5; // hero, reel, work (timeline), metadata (colour), contact (wide)
 
 const SW = 32; // screen width, units
 const SH = 18; // screen height
 const PX = 128; // texture pixels per unit
 const MON = { x: 8.25, y: 0.75, w: 13.5, h: 7.6 }; // program monitor picture, screen units
-const VIEW = { x: 23.3, y: 1.15, w: 6.2, h: 3.4875 }; // the colour page's viewer: the same picture
+/** The colour page's viewer, the smaller monitor on the right, in screen units. */
+export const VIEW = { x: 23.3, y: 1.15, w: 6.2, h: 3.4875 };
 
 /** Timeline ruler span (screen units): where the playhead runs, start to end of the picture. */
 export const TIMELINE = { x0: 2.8, x1: SW - 0.6, top: 10.0, bottom: 17.85 };
@@ -259,6 +260,7 @@ const MONITOR_FRAG = /* glsl */ `
   uniform sampler2D uVideo;
   uniform float uPictureMix;
   uniform sampler2D uPicture;
+  uniform float uDim;
   varying vec2 vUv;
 
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -297,6 +299,10 @@ const MONITOR_FRAG = /* glsl */ `
     return d > 0.0 ? sky : ground;
   }
 
+  vec3 srgbToLinear(vec3 c) {
+    return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+  }
+
   float waveAt(vec2 uv, float shift) {
     float x = uv.x + shift;
     float horizon = 0.455 + (x - 0.5) * 0.07;
@@ -323,8 +329,10 @@ const MONITOR_FRAG = /* glsl */ `
     col = pow(max(col, 0.0), vec3(2.2)); // authored in sRGB; the output stage re-encodes
     // The HyperFrames monitor composition, once the page has it playing.
     col = mix(col, texture2D(uPicture, uv).rgb, uPictureMix);
-    vec3 video = texture2D(uVideo, uv).rgb;
+    // three uploads video frames undecoded and leaves custom shaders to decode them.
+    vec3 video = srgbToLinear(texture2D(uVideo, uv).rgb);
     col = mix(col, video, uVideoMix);
+    col *= uDim;
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
@@ -411,22 +419,28 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
 
   if (video) video.colorSpace = THREE.SRGBColorSpace;
   if (picture) picture.colorSpace = THREE.SRGBColorSpace;
-  const monitorMat = new THREE.ShaderMaterial({
-    vertexShader: BASIC_VERT,
-    fragmentShader: MONITOR_FRAG,
-    uniforms: {
-      uTime: { value: 0 },
-      uPlay: { value: 0 },
-      uVideoMix: { value: 0 },
-      uVideo: { value: video || new THREE.Texture() },
-      uPictureMix: { value: 0 },
-      uPicture: { value: picture || new THREE.Texture() },
-    },
-  });
+  // The program monitor and the colour page's viewer share the picture; only the program
+  // monitor plays the hero.
+  const screenMat = (videoTex) =>
+    new THREE.ShaderMaterial({
+      vertexShader: BASIC_VERT,
+      fragmentShader: MONITOR_FRAG,
+      uniforms: {
+        uTime: { value: 0 },
+        uPlay: { value: 0 },
+        uVideoMix: { value: 0 },
+        uVideo: { value: videoTex || new THREE.Texture() },
+        uPictureMix: { value: 0 },
+        uPicture: { value: picture || new THREE.Texture() },
+        uDim: { value: 1 },
+      },
+    });
+  const monitorMat = screenMat(video);
+  const viewerMat = screenMat(null);
   const monitor = new THREE.Mesh(new THREE.PlaneGeometry(MON.w, MON.h), monitorMat);
   monitor.position.copy(toWorld(MON.x + MON.w / 2, MON.y + MON.h / 2, 0.01));
   scene.add(monitor);
-  const viewer = new THREE.Mesh(new THREE.PlaneGeometry(VIEW.w, VIEW.h), monitorMat);
+  const viewer = new THREE.Mesh(new THREE.PlaneGeometry(VIEW.w, VIEW.h), viewerMat);
   viewer.position.copy(toWorld(VIEW.x + VIEW.w / 2, VIEW.y + VIEW.h / 2, 0.01));
   scene.add(viewer);
 
@@ -541,13 +555,53 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
   let peek = 0; // 0..1, how far the camera leans toward the monitor shot
   const setPeek = (p) => (peek = p);
 
+  // A clip playing on the viewer, and how far the camera has turned to frame it.
+  /** @param {THREE.Texture} texture */
+  function setClip(texture) {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    viewerMat.uniforms.uVideo.value = texture;
+  }
+  const setClipMix = (m) => (viewerMat.uniforms.uVideoMix.value = m);
+  let focus = 0;
+  let region = { x0: 0, x1: 0.5, y0: 0, y1: 1 };
+  /**
+   * @param {number} f  0..1, how far the camera has turned to the viewer
+   * @param {{x0: number, x1: number, y0: number, y1: number}} [r] the part of the window to frame
+   *   it in, as fractions from the top left
+   */
+  function setFocus(f, r) {
+    focus = f;
+    if (r) region = r;
+  }
+  // The shot that fits the viewer inside the region, seen nearly square on.
+  function viewerShot(fit) {
+    const tan = Math.tan((camera.fov * Math.PI) / 360);
+    const rw = (region.x1 - region.x0) * 0.74;
+    const rh = (region.y1 - region.y0) * 0.8;
+    const visH = Math.max(VIEW.h / rh, VIEW.w / (rw * camera.aspect));
+    const visW = visH * camera.aspect;
+    const rx = (region.x0 + region.x1) / 2;
+    const ry = (region.y0 + region.y1) / 2;
+    return {
+      x: VIEW.x + VIEW.w / 2 + (0.5 - rx) * visW,
+      y: VIEW.y + VIEW.h / 2 + (0.5 - ry) * visH,
+      d: visH / (2 * tan) / fit,
+      yaw: 0.03,
+      pitch: 0.02,
+      roll: -0.015,
+      focus: 1 - ry,
+      blur: 4,
+    };
+  }
+
   const look = new THREE.Vector3();
   /**
    * @param {number} s     scroll position in stops, 0..STOPS-1
    * @param {number} time  seconds, for the waveform and lights
    * @param {number} reel  0..1, how far the reel has replaced the dusk on the monitor
+   * @param {number} dim   0..1, the program monitor's brightness
    */
-  function render(s, time = 0, reel = 0) {
+  function render(s, time = 0, reel = 0, dim = 1) {
     s = Math.min(STOPS - 1, Math.max(0, s));
     const k = Math.min(STOPS - 2, Math.floor(s));
     const e = smooth(clamp01(s - k));
@@ -558,9 +612,15 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
 
     // Narrow screens need more distance to fit the same subject.
     const fit = Math.max(1, 1.5 / camera.aspect);
+    if (focus > 0) {
+      const v = viewerShot(fit);
+      const f = smooth(clamp01(focus));
+      for (const key of Object.keys(v)) shot[key] = mix(shot[key], v[key], f);
+    }
     const t = toWorld(shot.x, shot.y);
-    const yaw = shot.yaw + pointer.x * 0.04;
-    const pitch = shot.pitch + pointer.y * 0.03;
+    const sway = 1 - smooth(clamp01(focus)); // held still while framing the viewer
+    const yaw = shot.yaw + pointer.x * 0.04 * sway;
+    const pitch = shot.pitch + pointer.y * 0.03 * sway;
     const d = shot.d * fit;
     camera.position.set(
       t.x + Math.sin(yaw) * Math.cos(pitch) * d,
@@ -578,10 +638,13 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
     phGlow.position.copy(toWorld(phX, 13.75, 0.025));
     phHead.position.copy(toWorld(phX, 10.0, 0.035));
 
-    monitorMat.uniforms.uTime.value = time;
-    monitorMat.uniforms.uPlay.value = 0.12 + ((time * 0.05 + s * 0.2) % 0.8);
+    for (const m of [monitorMat, viewerMat]) {
+      m.uniforms.uTime.value = time;
+      m.uniforms.uPlay.value = 0.12 + ((time * 0.05 + s * 0.2) % 0.8);
+      m.uniforms.uPictureMix.value = pictureMix;
+    }
     monitorMat.uniforms.uVideoMix.value = reel;
-    monitorMat.uniforms.uPictureMix.value = pictureMix;
+    monitorMat.uniforms.uDim.value = dim;
 
     dust.rotation.z = time * 0.01;
     dust.position.y = Math.sin(time * 0.2) * 0.2;
@@ -596,5 +659,5 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
     renderer.render(lensScene, lensCam);
   }
 
-  return { render, setSize, setPointer, setPlayhead, setPictureMix, setPeek, setScope, setWheels, pick, renderer };
+  return { render, setSize, setPointer, setPlayhead, setPictureMix, setPeek, setClip, setClipMix, setFocus, setScope, setWheels, pick, renderer };
 }

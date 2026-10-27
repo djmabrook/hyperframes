@@ -4,8 +4,10 @@
 // to scrub it, and drag a colour wheel's puck to grade it, gently.
 import { createWorkspace, STOPS, THREE, TIMELINE, WHEELS, PUCK_REACH } from "../motion/workspace/scene.js";
 import { FEATURES } from "./features.js";
+import { CLIPS, COLUMNS } from "./clips.js";
 import { setupBinPreviews } from "./bin-previews.js";
 import { setupLiveScopes } from "./live-scopes.js";
+import { setupClipViewer } from "./clip-viewer.js";
 
 const body = document.body;
 const params = new URLSearchParams(location.search);
@@ -13,15 +15,94 @@ if (params.has("clean")) body.classList.add("clean");
 document.getElementById("year").textContent = String(new Date().getFullYear());
 if (FEATURES.lowerThird) import("./lower-third.js");
 
+// ---------- Clip bin ----------
+// Each tab's list is built from js/clips.js. A clip's button carries its tab and index. Tabs
+// with columns get a header row and one cell per column, like a bin in list view.
+const span = (className, text) => {
+  const el = document.createElement("span");
+  el.className = className;
+  el.textContent = text;
+  return el;
+};
+for (const list of document.querySelectorAll("[data-bin]")) {
+  const tab = list.dataset.bin;
+  const columns = COLUMNS[tab];
+  if (columns) {
+    list.classList.add("cols");
+    const head = document.createElement("li");
+    head.className = "head";
+    head.setAttribute("aria-hidden", "true");
+    head.append(span("chip-gap", ""), span("thumb-gap", ""), ...columns.map(([key, label]) => span(`c c-${key}`, label)));
+    list.append(head);
+  }
+  CLIPS[tab].forEach((clip, i) => {
+    const li = document.createElement("li");
+    if (clip.placeholder !== false) li.className = "ph";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.clip = `${tab}:${i}`;
+    const chip = span("chip", "");
+    chip.style.setProperty("--c", clip.colour || "#8b9099");
+    const img = document.createElement("img");
+    img.src = clip.poster || "";
+    img.alt = "";
+    img.loading = "lazy";
+    button.append(chip, img);
+    if (columns) {
+      for (const [key, label] of columns) {
+        const cell = span(`c c-${key}${key === "title" ? " t" : ""}`, clip[key] || "");
+        if (key !== "title") cell.dataset.label = label;
+        button.append(cell);
+      }
+    } else {
+      button.append(span("t", clip.title));
+      if (clip.note) button.append(span("s", clip.note));
+    }
+    li.append(button);
+    list.append(li);
+  });
+}
+const clipOf = (el) => {
+  const [tab, i] = el.dataset.clip.split(":");
+  return CLIPS[tab][Number(i)];
+};
+
+// Tabs: click, or arrow keys between the tabs of one tab list.
+for (const list of document.querySelectorAll('[role="tablist"]')) {
+  const tabs = [...list.querySelectorAll('[role="tab"]')];
+  const selectTab = (tab) => {
+    for (const t of tabs) {
+      const on = t === tab;
+      t.setAttribute("aria-selected", String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    }
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener("click", () => selectTab(t));
+    t.addEventListener("keydown", (e) => {
+      const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!step) return;
+      const next = tabs[(i + step + tabs.length) % tabs.length];
+      selectTab(next);
+      next.focus();
+    });
+  });
+}
+
 // ---------- Viewer ----------
+// Plays a clip full size, in a dialog, unless the workspace's viewer takes it (feature clipViewer).
+let sendToViewer = null;
 const viewer = document.getElementById("viewer");
 const viewerVideo = viewer.querySelector("video");
-document.querySelectorAll("[data-play]").forEach((el) =>
-  el.addEventListener("click", () => {
-    viewer.showModal();
-    viewerVideo.currentTime = 0;
-    viewerVideo.play().catch(() => {});
-  }),
+const openViewer = (clip) => {
+  viewerVideo.poster = clip.poster || "";
+  viewerVideo.src = clip.video;
+  viewer.showModal();
+  viewerVideo.play().catch(() => {});
+};
+document.querySelectorAll("[data-clip]").forEach((el) =>
+  el.addEventListener("click", () => (sendToViewer ? sendToViewer(el, clipOf(el)) : openViewer(clipOf(el)))),
 );
 viewer.querySelector(".close").addEventListener("click", () => viewer.close());
 viewer.addEventListener("close", () => viewerVideo.pause());
@@ -50,9 +131,9 @@ async function start() {
   // The interface texture uses the mono face for its timecodes.
   await document.fonts.load('500 20px "JetBrains Mono"').catch(() => {});
 
-  // One video plays the reel on the program monitor (placeholder for now).
+  // One video plays the hero montage on the program monitor.
   const reel = document.createElement("video");
-  reel.src = "media/placeholder.mp4";
+  reel.src = "media/hero.mp4";
   reel.muted = true;
   reel.loop = true;
   reel.playsInline = true;
@@ -70,6 +151,8 @@ async function start() {
   const monitor = startMonitor();
   const binPreviews = FEATURES.binPreviews ? setupBinPreviews({ ws, monitor }) : null;
   const liveScopes = FEATURES.liveScopes ? setupLiveScopes({ ws, monitor }) : null;
+  const clipViewer = FEATURES.clipViewer ? setupClipViewer({ ws }) : null;
+  if (clipViewer) sendToViewer = clipViewer.send;
   const resize = () => ws.setSize(innerWidth, innerHeight);
   addEventListener("resize", resize);
   resize();
@@ -180,6 +263,7 @@ async function start() {
     ws.setPlayhead(m.fraction);
     binPreviews?.(dt);
     liveScopes?.();
+    clipViewer?.frame(dt);
     let moved = false;
     puck.forEach((p, k) => {
       for (const i of [0, 1]) {
@@ -193,14 +277,17 @@ async function start() {
       monitor.grade(gradeFrom(puck));
     }
 
-    // The reel takes over the program monitor on the way into the second stop.
-    const reelMix = Math.min(1, Math.max(0, (s - 0.55) / 0.4)) * (1 - Math.min(1, Math.max(0, (s - 1.6) / 0.4)));
+    // The hero takes over the program monitor on the way into the second stop and keeps
+    // playing from there, dimming as you scroll on toward the bottom.
+    const reelMix = Math.min(1, Math.max(0, (s - 0.55) / 0.4));
+    const fade = Math.min(1, Math.max(0, (s - 1.2) / (STOPS - 1 - 1.2)));
+    const dim = 1 - 0.94 * fade * fade * (3 - 2 * fade);
     if ((reelMix > 0) !== playing) {
       playing = reelMix > 0;
       if (playing) reel.play().catch(() => {});
       else reel.pause();
     }
-    ws.render(s, (now - t0) / 1000, reelMix);
+    ws.render(s, (now - t0) / 1000, reelMix, dim);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
