@@ -1,14 +1,15 @@
 // Feature "clipViewer": clicking a clip in the bin sends it to the colour page's viewer, the
 // smaller monitor on the right, and it starts playing there. The camera turns to frame the
-// viewer beside the bin, or above it when that leaves more room. Scroll on, or press Esc, and the camera
-// goes back to the page and the clip pauses. Click the viewer to pause or play.
+// viewer, then punches in to twice the size it would have beside the bin (capped to the window),
+// while the bin steps aside. Scroll on, press Esc, click off the viewer, or let the clip end, and the
+// camera eases back and the bin returns. Click the viewer to pause or play.
 // Off, a clip opens full size in a dialog instead.
 import { THREE, VIEW } from "../motion/workspace/scene.js";
 
 export function setupClipViewer({ ws }) {
   const video = document.createElement("video");
   video.playsInline = true;
-  video.loop = true;
+  video.addEventListener("ended", () => release());
   video.preload = "auto";
   ws.setClip(new THREE.VideoTexture(video));
   const panel = document.querySelector("#work .panel");
@@ -25,31 +26,23 @@ export function setupClipViewer({ ws }) {
     if (!state.on) return;
     state.on = false;
     video.pause();
+    panel.classList.remove("stepped-aside");
   };
 
-  // Frame the viewer where the bin panel leaves the most room: to its left, or above it,
-  // scrolling the panel down a little to make that room.
-  function frameBesidePanel() {
+  // The viewer's width beside the bin panel: to its left, or above it, whichever leaves more room.
+  // The punch-in doubles that, as large as the window allows, centred while the bin steps aside.
+  function framePunchedIn() {
     const r = panel.getBoundingClientRect();
-    const max = document.documentElement.scrollHeight - innerHeight;
-    const want = Math.max(innerHeight * 0.4, innerHeight - r.height - 16);
-    const above = Math.min(max, Math.max(0, scrollY + r.top - want));
-    const top = r.top - (above - scrollY);
-    // The widest 16:9 picture each side can hold, in pixels.
     const fits = (w, h) => Math.min(w, (h * 16) / 9);
-    const leftRoom = fits(r.left * 0.9, innerHeight * 0.8);
-    const aboveRoom = fits(innerWidth * 0.9, top * 0.8);
-    if (leftRoom >= aboveRoom) {
-      state.anchor = scrollY;
-      ws.setFocus(0, { x0: 0.02, x1: r.left / innerWidth - 0.02, y0: 0.08, y1: 0.92 });
-      return;
-    }
-    state.anchor = above;
-    ws.setFocus(0, { x0: 0, x1: 1, y0: 0.03, y1: Math.max(0.2, top / innerHeight - 0.02) });
-    if (state.anchor !== scrollY) {
-      state.settleUntil = performance.now() + 1200;
-      scrollTo({ top: state.anchor, behavior: "smooth" });
-    }
+    const beside = Math.max(fits(r.left * 0.9, innerHeight * 0.8), fits(innerWidth * 0.9, innerHeight * 0.4 * 0.8)) * 0.74;
+    const w = Math.min(beside * 2, fits(innerWidth * 0.92, innerHeight * 0.82));
+    const h = (w * 9) / 16;
+    // Region sized so viewerShot's margins leave the picture exactly w by h.
+    const rw = w / 0.74 / innerWidth;
+    const rh = h / 0.8 / innerHeight;
+    state.anchor = scrollY;
+    ws.setFocus(0, { x0: 0.5 - rw / 2, x1: 0.5 + rw / 2, y0: 0.5 - rh / 2, y1: 0.5 + rh / 2 });
+    panel.classList.add("stepped-aside");
   }
 
   function send(button, clip) {
@@ -60,7 +53,7 @@ export function setupClipViewer({ ws }) {
       state.mix = 0;
       video.src = clip.video;
     }
-    frameBesidePanel();
+    framePunchedIn();
     state.on = true;
     play();
   }
@@ -76,7 +69,10 @@ export function setupClipViewer({ ws }) {
   addEventListener("pointerdown", (e) => {
     if (!state.button || (e.target instanceof Element && e.target.closest(".panel, .slate, button, a, dialog"))) return;
     const p = ws.pick((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
-    if (!p || p.x < VIEW.x || p.x > VIEW.x + VIEW.w || p.y < VIEW.y || p.y > VIEW.y + VIEW.h) return;
+    if (!p || p.x < VIEW.x || p.x > VIEW.x + VIEW.w || p.y < VIEW.y || p.y > VIEW.y + VIEW.h) {
+      release();
+      return;
+    }
     if (video.paused) play();
     else video.pause();
   });
