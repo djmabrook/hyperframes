@@ -384,9 +384,14 @@ button.tab:focus-visible {
   border-radius: 3px;
 }
 .about-text {
-  margin: 0;
   color: var(--text);
   line-height: 1.55;
+}
+.about-text p {
+  margin: 0 0 0.8em;
+}
+.about-text p:last-child {
+  margin-bottom: 0;
 }
 @media (max-width: 480px) {
   .about {
