@@ -5,7 +5,8 @@
     H = 1080,
     VCR_Y = 1120,
     TV_Y = 2240,
-    DURATION = 14;
+    DURATION = 14,
+    END_SCALE = 2.7;
   // Measured in the VCR photograph's 1920×1080 coordinate space. Keep the
   // cassette's entering cross-section inside the dark aperture, not its bezel.
   const SLOT = {
@@ -40,9 +41,11 @@
     const projectedLength = tapeLength * Math.cos(pitchRadians);
     const entryCenterY = SLOT.y + projectedLength / 2;
     // Aim at the original photographed glass; no dissolve to a different TV photograph.
-    const scale = Math.exp(Math.log(4.05) * punch);
+    // Land with the whole curved glass and a little bezel in frame, so the CRT
+    // reads as a tube rather than a flat fill.
+    const scale = Math.exp(Math.log(END_SCALE) * punch);
     const cameraY = VCR_Y * approach + (TV_Y - VCR_Y) * tilt;
-    const aimY = mix(H / 2, 510, punch);
+    const aimY = mix(H / 2, 496, punch);
     return {
       time: t,
       cameraY,
