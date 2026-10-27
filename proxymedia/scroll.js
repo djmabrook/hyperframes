@@ -15,9 +15,15 @@
     baseScale = 1,
     coverScale = 1,
     endScale = 1;
-  // The punch lands on the photographed glass (508 composition px wide at the
-  // scene's 2.7x end zoom). Narrow screens fit that glass instead of cropping it.
-  const GLASS_END_WIDTH = 508 * 2.7;
+  // Where the punch lands. Wide screens: the curved glass plus a little bezel
+  // (scene zoom 2.7, glass 508 px wide), filling the screen. Screens whose frame
+  // would end shorter than the viewport (portrait phones) instead land on the
+  // whole TV: 545 px tall + 80 px of wall above and below (centred at y 527),
+  // and 636 px wide + 12 px each side, so the letterbox fade only ever touches
+  // wall, never the set.
+  const GLASS_END = { scale: 2.7, aimY: 496, width: 508 * 1.06 };
+  const TV_END = { scale: 1080 / 705, aimY: 527, width: 660 };
+  let sceneEnd = GLASS_END;
   function compositionReady() {
     if (!player?.ready || !player.duration) return false;
     if (player.assetsReady) return true;
@@ -39,7 +45,12 @@
     // at the end, rather than cropping the cassette away at the start.
     coverScale = Math.max(innerWidth / W, innerHeight / H);
     const scale = (baseScale = Math.min(coverScale, innerWidth / (W * 0.42)));
-    endScale = Math.min(coverScale, innerWidth / (GLASS_END_WIDTH * 1.06));
+    sceneEnd = GLASS_END;
+    endScale = Math.min(coverScale, innerWidth / (GLASS_END.width * GLASS_END.scale));
+    if (H * endScale < innerHeight - 1) {
+      sceneEnd = TV_END;
+      endScale = Math.min(coverScale, innerWidth / (TV_END.width * TV_END.scale));
+    }
     frame.style.width = `${W * scale}px`;
     frame.style.height = `${H * scale}px`;
     frame.classList.toggle("letterbox", H * scale < innerHeight - 1);
@@ -77,6 +88,11 @@
         ? target
         : current + (target - current) * -Math.expm1(-dt / 0.11);
     if (Math.abs(target - current) < 0.0001) current = target;
+    const scene = player.iframeElement.contentWindow.__proxyScene;
+    if (scene.end.scale !== sceneEnd.scale) {
+      scene.setEnd(sceneEnd.scale, sceneEnd.aimY);
+      shown = -1;
+    }
     if (Math.abs(current - shown) > 0.00001) {
       player.seek(current);
       const punch = Math.max(0, Math.min(1, (current / player.duration - 0.76) / 0.2));
