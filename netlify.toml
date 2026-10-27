@@ -1,0 +1,21 @@
+# The portfolio site is plain static files in site/; there is no build step.
+[build]
+  publish = "site"
+  command = ""
+
+# HyperFrames compositions and the 3D stage are authored here but served as-is.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

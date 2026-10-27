@@ -1,0 +1,492 @@
+@font-face {
+  font-family: "Inter";
+  font-weight: 400;
+  font-display: swap;
+  src: url("../fonts/inter-latin-400-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Inter";
+  font-weight: 600;
+  font-display: swap;
+  src: url("../fonts/inter-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-weight: 500;
+  font-display: swap;
+  src: url("../fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2");
+}
+
+/* Interface palette, after Premiere Pro and DaVinci Resolve. */
+:root {
+  --well: #050506;
+  --panel: rgba(27, 28, 32, 0.88);
+  --panel-head: #202227;
+  --line: #2c2e34;
+  --text: #d7d9de;
+  --dim: #8b9099;
+  --blue: #2d8ceb;
+  --tc: #4aa3ff;
+  --rec: #e8453c;
+  --select: rgba(45, 140, 235, 0.22);
+  --ph: rgba(242, 165, 65, 0.65);
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --gutter: clamp(16px, 4vw, 64px);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--well);
+  color: var(--text);
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+#ws,
+#ws-fallback {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#ws-fallback {
+  display: none;
+  background:
+    linear-gradient(180deg, rgba(5, 5, 6, 0.2), var(--well)),
+    url("../media/placeholder-poster.jpg") center / cover;
+  opacity: 0.5;
+}
+.no-ws #ws {
+  display: none;
+}
+.no-ws #ws-fallback {
+  display: block;
+}
+main {
+  position: relative;
+  z-index: 1;
+}
+
+/* Placeholder markers (hide with ?clean) */
+.ph {
+  outline: 1px dashed var(--ph);
+  outline-offset: 3px;
+}
+.clean .ph {
+  outline: none;
+}
+
+/* ---------- Stops ---------- */
+.stop {
+  min-height: 130vh;
+  min-height: 130svh;
+  padding: 12vh var(--gutter);
+  display: flex;
+  align-items: center;
+}
+#top {
+  min-height: 100vh;
+  min-height: 100svh;
+  align-items: flex-end;
+  padding-bottom: 10vh;
+}
+
+/* Hero: set like a lower third. */
+.slate {
+  padding: 14px 18px 14px 16px;
+  border-left: 2px solid var(--tc);
+  background: linear-gradient(90deg, rgba(5, 5, 6, 0.72), rgba(5, 5, 6, 0));
+}
+.name {
+  margin: 0 0 2px;
+  font-size: clamp(22px, 2.6vw, 30px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+.role,
+.meta {
+  margin: 0;
+  color: var(--text);
+}
+.sep {
+  color: var(--dim);
+}
+.avail {
+  white-space: nowrap;
+}
+.rec {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin: 0 6px 1px 2px;
+  border-radius: 50%;
+  background: var(--rec);
+  box-shadow: 0 0 8px var(--rec);
+  animation: blink 1.6s steps(2, start) infinite;
+}
+@keyframes blink {
+  to {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rec {
+    animation: none;
+  }
+}
+
+/* ---------- Panels ---------- */
+.panel {
+  width: min(560px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+.panel.right {
+  margin-left: auto;
+}
+.panel.center {
+  margin: 0 auto;
+}
+.tabs {
+  display: flex;
+  height: 34px;
+  align-items: stretch;
+  padding: 0 12px;
+  background: var(--panel-head);
+  border-bottom: 1px solid var(--line);
+}
+.tab {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: inset 0 -2px 0 var(--blue);
+  padding: 0 4px;
+}
+/* Tabs that switch: the selected one is underlined, like a Premiere panel's. */
+button.tab {
+  all: unset;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+  cursor: pointer;
+}
+button.tab + button.tab {
+  margin-left: 6px;
+}
+button.tab:hover {
+  color: var(--text);
+}
+button.tab[aria-selected="true"] {
+  color: #fff;
+  box-shadow: inset 0 -2px 0 var(--blue);
+}
+button.tab:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -4px;
+}
+
+/* Work: a bin in list view. */
+.bin {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  max-height: 64vh;
+  overflow: auto;
+}
+.bin button {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 12px 72px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+.bin button:hover,
+.bin button:focus-visible,
+.bin button[aria-current="true"] {
+  background: var(--select);
+}
+.bin li.ph {
+  outline-offset: -3px;
+}
+.chip {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--c);
+}
+.bin img {
+  width: 72px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  border-radius: 2px;
+}
+.bin .t {
+  color: #fff;
+}
+.bin .s {
+  font: 500 11px/1 var(--mono);
+  color: var(--tc);
+}
+
+/* A bin with columns (list view): a header row, then one cell per column. */
+#work .panel {
+  width: min(900px, 100%);
+}
+/* While a clip plays punched in on the viewer, the bin steps aside. */
+#work .panel {
+  transition: opacity 0.4s, transform 0.4s;
+}
+#work .panel.stepped-aside {
+  opacity: 0;
+  transform: translateY(24px);
+  pointer-events: none;
+}
+.bin.cols button,
+.bin.cols .head {
+  grid-template-columns: 12px 56px minmax(0, 2.3fr) 0.95fr 0.7fr 1.5fr 1.15fr;
+  gap: 12px;
+}
+.bin.cols img {
+  width: 56px;
+}
+.bin .head {
+  display: grid;
+  align-items: center;
+  padding: 2px 14px 8px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 4px;
+  font: 500 11px/1 var(--mono);
+  color: var(--dim);
+  letter-spacing: 0.04em;
+}
+.bin.cols .c {
+  min-width: 0;
+  color: var(--text);
+}
+.bin.cols .c.t {
+  color: #fff;
+}
+.bin.cols .c-year,
+.bin.cols .c-episodes {
+  font: 500 12px/1.2 var(--mono);
+  color: var(--tc);
+}
+.bin.cols .head .c {
+  font: inherit;
+  color: inherit;
+}
+@media (max-width: 700px) {
+  .bin .head {
+    display: none;
+  }
+  .bin.cols button {
+    grid-template-columns: 12px 56px 1fr;
+    row-gap: 2px;
+  }
+  .bin.cols .c {
+    grid-column: 3;
+    font-size: 12px;
+  }
+  .bin.cols .c.t {
+    grid-row: 1;
+    font-size: 14px;
+  }
+  .bin.cols .chip,
+  .bin.cols img {
+    grid-row: 1 / span 5;
+  }
+  .bin.cols .c:empty {
+    display: none;
+  }
+  .bin.cols .c-episodes::before {
+    content: attr(data-label) " ";
+  }
+}
+
+/* Metadata: bins that toggle open with a disclosure triangle, like Premiere's Metadata panel. */
+.meta-bins {
+  padding: 6px 0;
+}
+.meta-bins details {
+  border-bottom: 1px solid var(--line);
+}
+.meta-bins details:last-child {
+  border-bottom: 0;
+}
+.meta-bins summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  color: #fff;
+  cursor: pointer;
+}
+.meta-bins summary::-webkit-details-marker {
+  display: none;
+}
+.meta-bins summary::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 6px solid var(--dim);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.15s;
+}
+.meta-bins details[open] > summary::before {
+  transform: rotate(90deg);
+}
+.meta-bins summary:hover,
+.meta-bins summary:focus-visible {
+  background: var(--select);
+  outline: none;
+}
+.meta-bins ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 8px;
+}
+.meta-bins li {
+  padding: 6px 14px 6px 34px;
+  color: var(--dim);
+}
+.meta-bins li:nth-child(even) {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+/* About: a photo beside a short text. */
+.about {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 18px;
+  align-items: start;
+  padding: 18px 16px;
+}
+.about-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 3px;
+}
+.about-text {
+  color: var(--text);
+  line-height: 1.55;
+}
+.about-text p {
+  margin: 0 0 0.8em;
+}
+.about-text p:last-child {
+  margin-bottom: 0;
+}
+@media (max-width: 480px) {
+  .about {
+    grid-template-columns: 1fr;
+  }
+  .about-photo {
+    width: 140px;
+  }
+}
+
+/* Contact */
+.contact-body {
+  padding: 28px 22px 18px;
+}
+.email {
+  font-size: clamp(18px, 2.4vw, 26px);
+  color: #fff;
+  text-decoration: none;
+  border-bottom: 1px solid var(--blue);
+  overflow-wrap: anywhere;
+}
+.links {
+  list-style: none;
+  display: flex;
+  gap: 20px;
+  margin: 22px 0 0;
+  padding: 0;
+}
+.links a {
+  color: var(--dim);
+  text-decoration: none;
+}
+.links a:hover {
+  color: #fff;
+}
+.foot {
+  margin: 28px 0 0;
+  font: 500 11px/1 var(--mono);
+  color: var(--dim);
+}
+a:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+/* Viewer */
+#viewer {
+  width: min(1100px, 94vw);
+  padding: 0;
+  border: 1px solid var(--line);
+  background: #000;
+}
+#viewer::backdrop {
+  background: rgba(5, 5, 6, 0.9);
+}
+#viewer video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+#viewer .close {
+  position: absolute;
+  right: 6px;
+  top: 4px;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+/* The monitor composition plays behind the workspace canvas, which samples its frames. */
+#monitor-player {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  width: 160px;
+  height: 90px;
+  opacity: 0.01;
+  pointer-events: none;
+}
+/* Horizontal drags scrub and grade; vertical ones still scroll. */
+main {
+  touch-action: pan-y;
+}
