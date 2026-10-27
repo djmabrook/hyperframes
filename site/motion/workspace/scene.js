@@ -299,6 +299,10 @@ const MONITOR_FRAG = /* glsl */ `
     return d > 0.0 ? sky : ground;
   }
 
+  vec3 srgbToLinear(vec3 c) {
+    return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+  }
+
   float waveAt(vec2 uv, float shift) {
     float x = uv.x + shift;
     float horizon = 0.455 + (x - 0.5) * 0.07;
@@ -325,7 +329,8 @@ const MONITOR_FRAG = /* glsl */ `
     col = pow(max(col, 0.0), vec3(2.2)); // authored in sRGB; the output stage re-encodes
     // The HyperFrames monitor composition, once the page has it playing.
     col = mix(col, texture2D(uPicture, uv).rgb, uPictureMix);
-    vec3 video = texture2D(uVideo, uv).rgb;
+    // three uploads video frames undecoded and leaves custom shaders to decode them.
+    vec3 video = srgbToLinear(texture2D(uVideo, uv).rgb);
     col = mix(col, video, uVideoMix);
     col *= uDim;
     gl_FragColor = vec4(col, 1.0);
@@ -613,8 +618,9 @@ export function createWorkspace({ canvas, video, picture, pixelRatio = 1 }) {
       for (const key of Object.keys(v)) shot[key] = mix(shot[key], v[key], f);
     }
     const t = toWorld(shot.x, shot.y);
-    const yaw = shot.yaw + pointer.x * 0.04;
-    const pitch = shot.pitch + pointer.y * 0.03;
+    const sway = 1 - smooth(clamp01(focus)); // held still while framing the viewer
+    const yaw = shot.yaw + pointer.x * 0.04 * sway;
+    const pitch = shot.pitch + pointer.y * 0.03 * sway;
     const d = shot.d * fit;
     camera.position.set(
       t.x + Math.sin(yaw) * Math.cos(pitch) * d,
