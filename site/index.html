@@ -42,20 +42,29 @@
         </div>
       </section>
 
-      <section id="credits" class="stop" data-stop="3">
+      <section id="metadata" class="stop" data-stop="3">
         <div class="panel left">
-          <div class="tabs"><h2 class="tab">Credits</h2></div>
-          <!-- PLACEHOLDER: temp credits -->
-          <table class="meta-table ph">
-            <tbody>
-              <tr><th scope="row">Temp Credit One</th><td>Editor</td><td>Network Name</td><td class="tc">20XX</td></tr>
-              <tr><th scope="row">Temp Credit Two</th><td>Editor</td><td>Brand Name</td><td class="tc">20XX</td></tr>
-              <tr><th scope="row">Temp Credit Three</th><td>Additional Editor</td><td>Streamer Name</td><td class="tc">20XX</td></tr>
-              <tr><th scope="row">Temp Credit Four</th><td>Editor</td><td>Agency / Brand</td><td class="tc">20XX</td></tr>
-              <tr><th scope="row">Temp Credit Five</th><td>Assistant Editor</td><td>Network Name</td><td class="tc">20XX</td></tr>
-              <tr><th scope="row">Temp Credit Six</th><td>Editor</td><td>Festival / Distributor</td><td class="tc">20XX</td></tr>
-            </tbody>
-          </table>
+          <div class="tabs" role="tablist" aria-label="Metadata and About">
+            <button class="tab" type="button" role="tab" id="tab-metadata" aria-controls="pane-metadata" aria-selected="true">Metadata</button>
+            <button class="tab" type="button" role="tab" id="tab-about" aria-controls="pane-about" aria-selected="false" tabindex="-1">About</button>
+          </div>
+          <div role="tabpanel" id="pane-metadata" aria-labelledby="tab-metadata">
+            <div class="meta-bins">
+              <details><summary>Editing</summary><ul><li>Adobe Premiere Pro</li><li>AVID Media Composer</li></ul></details>
+              <details><summary>Motion GFX</summary><ul><li>After Effects</li><li>Blender</li><li>Hyperframes</li><li>Remotion</li></ul></details>
+              <details><summary>Image Editing</summary><ul><li>Adobe Photoshop</li></ul></details>
+              <details><summary>Color Correction</summary><ul><li>DaVinci Resolve</li></ul></details>
+              <details><summary>Sound Mixing</summary><ul><li>Logic Pro</li></ul></details>
+              <details><summary>Agentic Workflows</summary><ul><li>Claude Code</li><li>Codex</li></ul></details>
+            </div>
+          </div>
+          <div role="tabpanel" id="pane-about" aria-labelledby="tab-about" hidden>
+            <!-- PLACEHOLDER: Mohamed's photo and blurb -->
+            <div class="about">
+              <div class="about-photo ph" role="img" aria-label="Photo"></div>
+              <p class="about-text ph">About text</p>
+            </div>
+          </div>
         </div>
       </section>
 

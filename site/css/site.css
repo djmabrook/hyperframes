@@ -315,52 +315,82 @@ button.tab:focus-visible {
   }
 }
 
-/* Credits: metadata list. */
-.meta-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0;
+/* Metadata: bins that toggle open with a disclosure triangle, like Premiere's Metadata panel. */
+.meta-bins {
+  padding: 6px 0;
 }
-.meta-table.ph {
-  outline-offset: -4px;
-}
-.meta-table th,
-.meta-table td {
-  text-align: left;
-  padding: 10px 14px;
+.meta-bins details {
   border-bottom: 1px solid var(--line);
-  font-weight: 400;
 }
-.meta-table tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.025);
+.meta-bins details:last-child {
+  border-bottom: 0;
 }
-.meta-table th {
+.meta-bins summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
   color: #fff;
+  cursor: pointer;
 }
-.meta-table td {
+.meta-bins summary::-webkit-details-marker {
+  display: none;
+}
+.meta-bins summary::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 6px solid var(--dim);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform 0.15s;
+}
+.meta-bins details[open] > summary::before {
+  transform: rotate(90deg);
+}
+.meta-bins summary:hover,
+.meta-bins summary:focus-visible {
+  background: var(--select);
+  outline: none;
+}
+.meta-bins ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 8px;
+}
+.meta-bins li {
+  padding: 6px 14px 6px 34px;
   color: var(--dim);
 }
-.meta-table .tc {
-  font-family: var(--mono);
-  color: var(--tc);
+.meta-bins li:nth-child(even) {
+  background: rgba(255, 255, 255, 0.025);
 }
-@media (max-width: 600px) {
-  .meta-table tr {
-    display: block;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--line);
+
+/* About: a photo beside a short text. */
+.about {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 18px;
+  align-items: start;
+  padding: 18px 16px;
+}
+.about-photo {
+  aspect-ratio: 4 / 5;
+  border-radius: 3px;
+  background: var(--well) center / cover;
+}
+.about-text {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.55;
+}
+@media (max-width: 480px) {
+  .about {
+    grid-template-columns: 1fr;
   }
-  .meta-table th,
-  .meta-table td {
-    display: inline;
-    padding: 0;
-    border: 0;
-  }
-  .meta-table th {
-    display: block;
-  }
-  .meta-table td + td::before {
-    content: " · ";
+  .about-photo {
+    width: 140px;
   }
 }
 

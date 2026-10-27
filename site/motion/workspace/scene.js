@@ -11,7 +11,7 @@ export { THREE };
 
 /** Load an image as a texture (for hosts that show a still in place of the reel). */
 export const loadTexture = (url) => new THREE.TextureLoader().loadAsync(url);
-export const STOPS = 5; // hero, reel, work (timeline), credits (colour), contact (wide)
+export const STOPS = 5; // hero, reel, work (timeline), metadata (colour), contact (wide)
 
 const SW = 32; // screen width, units
 const SH = 18; // screen height

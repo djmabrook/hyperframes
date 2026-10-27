@@ -67,26 +67,28 @@ const clipOf = (el) => {
   return CLIPS[tab][Number(i)];
 };
 
-// Tabs: click, or arrow keys between them.
-const tabs = [...document.querySelectorAll('[role="tab"]')];
-const selectTab = (tab) => {
-  for (const t of tabs) {
-    const on = t === tab;
-    t.setAttribute("aria-selected", String(on));
-    t.tabIndex = on ? 0 : -1;
-    document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
-  }
-};
-tabs.forEach((t, i) => {
-  t.addEventListener("click", () => selectTab(t));
-  t.addEventListener("keydown", (e) => {
-    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-    if (!step) return;
-    const next = tabs[(i + step + tabs.length) % tabs.length];
-    selectTab(next);
-    next.focus();
+// Tabs: click, or arrow keys between the tabs of one tab list.
+for (const list of document.querySelectorAll('[role="tablist"]')) {
+  const tabs = [...list.querySelectorAll('[role="tab"]')];
+  const selectTab = (tab) => {
+    for (const t of tabs) {
+      const on = t === tab;
+      t.setAttribute("aria-selected", String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    }
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener("click", () => selectTab(t));
+    t.addEventListener("keydown", (e) => {
+      const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (!step) return;
+      const next = tabs[(i + step + tabs.length) % tabs.length];
+      selectTab(next);
+      next.focus();
+    });
   });
-});
+}
 
 // ---------- Viewer ----------
 // Plays a clip full size, in a dialog, unless the workspace's viewer takes it (feature clipViewer).
