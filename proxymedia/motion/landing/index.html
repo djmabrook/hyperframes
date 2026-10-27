@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Proxy Media landing</title>
+    <script src="assets/vendor/gsap-3.14.2.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #e4ddd5;
+      }
+      #root {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: #e4ddd5;
+      }
+      #zoom,
+      #cam,
+      #rig {
+        position: absolute;
+        inset: 0;
+      }
+      #zoom {
+        transform-origin: 0 0;
+      }
+      /* The camera. perspective is the focal length in pixels; the rig pivots on the lens. */
+      #cam {
+        perspective: 1888px;
+        perspective-origin: 50% 50%;
+      }
+      #rig {
+        transform-style: preserve-3d;
+      }
+      /* Each shot is a wall facing the lens, 1920 x 1080 (4K frames at half scale). */
+      .plane {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        backface-visibility: hidden;
+      }
+      .plane img,
+      .plane .clip {
+        position: absolute;
+        display: block;
+      }
+      .full {
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+      }
+      /* Bleed: each wall continues past its frame with mirrored copies of itself (built by
+         the script below), so the frame never shows an edge while the camera pivots and walls
+         meet between shots. */
+      .bleed {
+        position: absolute;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      .bleed img {
+        position: absolute;
+      }
+      #wall {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1495.5px;
+      }
+      #insert {
+        /* The slot's lower lip: the tape disappears above this line as it goes in. */
+        left: 0;
+        top: 533.5px;
+        width: 1920px;
+        height: 420px;
+        overflow: hidden;
+      }
+      #flyer {
+        position: absolute;
+        left: 649px;
+        top: 548px;
+        width: 659.5px;
+        height: 316px;
+        opacity: 0;
+      }
+      #flyer img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #tv-screen {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        transform-origin: 0 0;
+        /* frame 7 registered onto frame 6 (SIFT, 21 inliers) */
+        transform: translate(647.05px, 314.5px) rotate(0.42deg) scale(0.32362);
+        opacity: 0;
+      }
+      /* TBA: the rest of the site will live inside the TV screen. Empty on purpose. */
+      #tv-content {
+        position: absolute;
+        left: 236px;
+        top: 70px;
+        width: 1448px;
+        height: 930px;
+        border-radius: 70px;
+        border: 3px dashed rgba(255, 255, 255, 0.4);
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="14" data-width="1920" data-height="1080">
+      <div id="zoom">
+        <div id="cam">
+          <div id="rig">
+            <!-- Frames 1 and 2: the tape on the white wall, "Brooklyn, NY 2026" beneath it.
+                 The camera tilts down the wall from frame 1 to frame 2 as the tape comes off. -->
+            <div class="plane" id="plane-wall">
+              <div id="wall" data-bleed="assets/img/wall.webp">
+                <img class="full" src="assets/img/wall.webp" alt="" style="height: 1495.5px" />
+                <img id="tape01-shadow" src="assets/img/tape01-shadow.webp" alt="" style="left: 564px; top: 252.5px; width: 796.5px; height: 535px" />
+                <img id="wall-01" class="full" src="assets/img/wall-01.webp" alt="" />
+                <img id="tape02-shadow" src="assets/img/tape02-shadow.webp" alt="" style="left: 566px; top: 934.5px; width: 825.5px; height: 428px; opacity: 0" />
+                <img id="tape02" src="assets/img/tape02.webp" alt="" style="left: 649px; top: 963.5px; width: 659.5px; height: 316px; opacity: 0" />
+                <img id="tape01" src="assets/img/tape01.webp" alt="" style="left: 647px; top: 335.5px; width: 630.5px; height: 369px" />
+              </div>
+            </div>
+            <!-- Frames 3 to 5: the VCR on the next wall. The tape slides in; the flap closes. -->
+            <div class="plane" id="plane-vcr" data-bleed="assets/img/vcr-open.webp">
+              <img class="full" src="assets/img/vcr-open.webp" alt="" />
+              <img class="full" id="vcr-closed" src="assets/img/vcr-closed.webp" alt="" style="opacity: 0" />
+              <img id="tape03-shadow" src="assets/img/tape03-shadow.webp" alt="" style="left: 342px; top: 678px; width: 1014px; height: 388.5px; opacity: 0" />
+              <div class="clip" id="insert">
+                <img id="tape03" src="assets/img/tape03.webp" alt="" style="left: 602px; top: -0.5px; width: 694px; height: 230px; opacity: 0" />
+              </div>
+            </div>
+            <!-- Frame 6: the Sony Trinitron on the other wall. -->
+            <div class="plane" id="plane-tv" data-bleed="assets/img/tv-wall.webp">
+              <img class="full" src="assets/img/tv-wall.webp" alt="" />
+            </div>
+          </div>
+        </div>
+        <!-- Frame 7: the screen close-up, placed where the screen sits in frame 6. -->
+        <img id="tv-screen" src="assets/img/tv-screen.webp" alt="" />
+      </div>
+      <div id="tv-content" data-placeholder="tba"></div>
+      <!-- The tape in flight between walls, in front of the lens. -->
+      <div id="flyer">
+        <img id="flyer-a" src="assets/img/tape02.webp" alt="" />
+        <img id="flyer-b" src="assets/img/tape03.webp" alt="" style="opacity: 0" />
+      </div>
+    </div>
+    <script>
+      const W = 1920,
+        H = 1080,
+        F = 1888; // focal length in px, matches #cam perspective
+      // Camera pivot between walls, in degrees. Each wall faces the lens; at 36 degrees the
+      // padded walls meet just outside the frame.
+      const TILT_VCR = 36,
+        TILT_TV = 36;
+      const WALL_DROP = 415.5; // frame 2 sits 831 px (4K) further down the wall than frame 1
+      // frame 7 placed on frame 6: translate, rotation (deg), scale
+      const SCREEN = { x: 647.05, y: 314.5, r: 0.42, s: 0.32362 };
+
+      // Mirrored bleed around each wall: 3 x 3 copies, flipped so every seam is continuous.
+      const BLEED_X = 420,
+        BLEED_Y = 160;
+      for (const host of document.querySelectorAll("[data-bleed]")) {
+        const w = host.offsetWidth,
+          h = host.offsetHeight;
+        const box = document.createElement("div");
+        box.className = "bleed";
+        Object.assign(box.style, { left: -BLEED_X + "px", top: -BLEED_Y + "px", width: w + 2 * BLEED_X + "px", height: h + 2 * BLEED_Y + "px" });
+        for (const gy of [-1, 0, 1])
+          for (const gx of [-1, 0, 1]) {
+            if (!gx && !gy) continue;
+            const img = document.createElement("img");
+            img.src = host.dataset.bleed;
+            img.alt = "";
+            Object.assign(img.style, {
+              left: BLEED_X + gx * w + "px",
+              top: BLEED_Y + gy * h + "px",
+              width: w + "px",
+              height: h + "px",
+              transform: `scale(${gx ? -1 : 1}, ${gy ? -1 : 1})`,
+            });
+            box.appendChild(img);
+          }
+        host.insertBefore(box, host.firstChild);
+      }
+
+      const pivot = `50% 50% ${F}px`;
+      gsap.set("#rig", { rotationX: 0, transformOrigin: pivot });
+      gsap.set("#plane-wall", { transformOrigin: pivot });
+      gsap.set("#plane-vcr", { rotationX: TILT_VCR, transformOrigin: pivot });
+      gsap.set("#plane-tv", { rotationX: TILT_VCR + TILT_TV, transformOrigin: pivot });
+      gsap.set("#tape01", { transformPerspective: F, transformOrigin: "50% 50%" });
+
+      // Motion blur while the camera whips between walls, as a function of time. Seeking
+      // suppresses tween callbacks, so blur and zoom are applied from modifiers instead.
+      const blur = { v: 0 };
+      const blurTargets = [...document.querySelectorAll(".plane"), document.getElementById("flyer")];
+      const applyBlur = (v) => {
+        const f = v > 0.1 ? `blur(${v.toFixed(2)}px)` : "none";
+        for (const el of blurTargets) el.style.filter = f;
+        return v;
+      };
+
+      // Punch-in: z runs 0..1; scale grows exponentially and frame 7's centre is carried to the
+      // frame centre, so z = 1 lands exactly on frame 7's framing.
+      const zoom = { z: 0 };
+      const zoomEl = document.getElementById("zoom");
+      const K = 1 / SCREEN.s;
+      const rad = (d) => (d * Math.PI) / 180;
+      const fx = SCREEN.x + SCREEN.s * (Math.cos(rad(SCREEN.r)) * W / 2 - Math.sin(rad(SCREEN.r)) * H / 2);
+      const fy = SCREEN.y + SCREEN.s * (Math.sin(rad(SCREEN.r)) * W / 2 + Math.cos(rad(SCREEN.r)) * H / 2);
+      const applyZoom = (z) => {
+        const sc = Math.pow(K, z);
+        const u = (sc - 1) / (K - 1);
+        const a = rad(-SCREEN.r * z);
+        const tx = fx + (W / 2 - fx) * u;
+        const ty = fy + (H / 2 - fy) * u;
+        const c = Math.cos(a) * sc,
+          s = Math.sin(a) * sc;
+        zoomEl.style.transform = `matrix(${c},${s},${-s},${c},${tx - (c * fx - s * fy)},${ty - (s * fx + c * fy)})`;
+        return z;
+      };
+
+      const tl = gsap.timeline({ paused: true });
+
+      // A. Frame 1 to frame 2: the camera tilts down the wall while the tape comes off it,
+      //    turning toward the lens. Its wall shadow loosens and fades.
+      tl.to("#wall", { y: -WALL_DROP, duration: 2.6, ease: "power2.inOut" }, 0.7);
+      tl.to("#wall-01", { opacity: 0, duration: 1.8, ease: "power1.inOut" }, 1.2);
+      tl.to("#tape01-shadow", { opacity: 0, x: -10, y: 18, duration: 1.0, ease: "power1.in" }, 0.7);
+      tl.to("#tape01", { x: 16.5, y: 601.5, rotation: -7.5, rotationX: 22, duration: 2.5, ease: "power2.inOut" }, 0.8);
+      tl.to("#tape02-shadow", { opacity: 1, duration: 0.7, ease: "power1.out" }, 2.6);
+      tl.to("#tape02", { opacity: 1, duration: 0.4, ease: "none" }, 2.9);
+      tl.to("#tape01", { opacity: 0, duration: 0.4, ease: "none" }, 2.9);
+
+      // B. The camera pivots down to the VCR wall; the tape flies in front of the lens to the slot.
+      tl.set("#tape02", { opacity: 0 }, 3.7);
+      tl.set("#flyer", { opacity: 1 }, 3.7);
+      tl.to("#tape02-shadow", { opacity: 0, duration: 0.6, ease: "power1.in" }, 3.7);
+      tl.to("#rig", { rotationX: -TILT_VCR, duration: 2.7, ease: "power2.inOut" }, 3.7);
+      tl.to(blur, { v: 9, duration: 1.35, ease: "power2.in", modifiers: { v: (v) => applyBlur(+v) } }, 3.7);
+      tl.to(blur, { v: 0, duration: 1.35, ease: "power2.out", modifiers: { v: (v) => applyBlur(+v) } }, 5.05);
+      tl.to("#flyer", { left: 602, top: 549.5, width: 694, height: 230, scale: 1.02, duration: 2.5, ease: "power2.inOut" }, 3.7);
+      tl.to("#flyer-b", { opacity: 1, duration: 0.7, ease: "none" }, 4.5);
+      tl.set("#flyer-a", { opacity: 0 }, 5.2);
+      tl.set("#flyer", { opacity: 0 }, 6.2);
+      tl.set("#tape03", { opacity: 1, y: 16, scale: 1.02 }, 6.2);
+      tl.to("#tape03", { y: 0, scale: 1, duration: 0.6, ease: "power2.out" }, 6.2);
+      tl.to("#tape03-shadow", { opacity: 1, duration: 1.0, ease: "power1.out" }, 5.8);
+
+      // C. The tape slides into the slot; the flap closes behind it.
+      tl.to("#tape03", { y: -240, scaleX: 0.97, duration: 1.4, ease: "power2.inOut" }, 7.1);
+      tl.to("#tape03-shadow", { opacity: 0, y: -24, duration: 0.8, ease: "power1.in" }, 7.1);
+      tl.to("#vcr-closed", { opacity: 1, duration: 0.35, ease: "power1.inOut" }, 8.5);
+
+      // D. The camera pivots down to the other wall, the TV.
+      tl.to("#rig", { rotationX: -(TILT_VCR + TILT_TV), duration: 2.0, ease: "power2.inOut" }, 9.2);
+      tl.to(blur, { v: 10, duration: 1.0, ease: "power2.in", modifiers: { v: (v) => applyBlur(+v) } }, 9.2);
+      tl.to(blur, { v: 0, duration: 1.0, ease: "power2.out", modifiers: { v: (v) => applyBlur(+v) } }, 10.2);
+
+      // E. Punch in on the screen until it fills the frame.
+      tl.to(zoom, { z: 1, duration: 1.9, ease: "power2.inOut", modifiers: { z: (z) => applyZoom(+z) } }, 11.5);
+      tl.to("#tv-screen", { opacity: 1, duration: 0.6, ease: "none" }, 12.6);
+      tl.to("#tv-content", { opacity: 1, duration: 0.4, ease: "none" }, 13.5);
+      tl.set({}, {}, 14);
+
+      applyBlur(0);
+      applyZoom(0);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Proxy Media</title>
+    <link rel="preload" as="image" href="media/poster.webp" />
+    <style>
+      :root {
+        --wall: #e4ddd5;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html {
+        background: var(--wall);
+      }
+      body {
+        background: var(--wall);
+        /* The scroll length drives the sequence; nothing else lives on the page yet. */
+        height: 800vh;
+      }
+      #stage {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        background: var(--wall);
+      }
+      #frame {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+      #frame > * {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #poster {
+        object-fit: cover;
+        transition: opacity 0.4s ease;
+      }
+      #frame.ready #poster {
+        opacity: 0;
+      }
+      hyperframes-player {
+        display: block;
+        pointer-events: none;
+      }
+      /* Narrow screens show more of the frame than fits; the frame dissolves into the wall. */
+      #frame.letterbox {
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%, #000 91%, transparent 100%);
+        mask-image: linear-gradient(to bottom, transparent 0, #000 9%, #000 91%, transparent 100%);
+      }
+      /* Warm falloff and live film grain over everything. */
+      #vignette {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(ellipse at 50% 45%, rgba(0, 0, 0, 0) 55%, rgba(58, 36, 16, 0.22) 100%);
+        mix-blend-mode: multiply;
+      }
+      #grain {
+        position: fixed;
+        inset: -2px;
+        width: calc(100% + 4px);
+        height: calc(100% + 4px);
+        pointer-events: none;
+        opacity: 0.13;
+        mix-blend-mode: overlay;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #grain {
+          opacity: 0.1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage" aria-hidden="true">
+      <div id="frame">
+        <img id="poster" src="media/poster.webp" alt="" />
+      </div>
+      <div id="vignette"></div>
+      <canvas id="grain"></canvas>
+    </div>
+    <script>
+      // The landing sequence is a HyperFrames composition (motion/landing) played with
+      // <hyperframes-player>. Scrolling seeks it, eased toward the scroll position, so it runs
+      // forward on the way down and backward on the way up.
+      const COMP_W = 1920,
+        COMP_H = 1080;
+      const frame = document.getElementById("frame");
+
+      // Cover the viewport, but on tall screens keep at least ~42% of the frame's width visible.
+      function layout() {
+        const vw = innerWidth,
+          vh = innerHeight;
+        const cover = Math.max(vw / COMP_W, vh / COMP_H);
+        const scale = Math.min(cover, vw / (COMP_W * 0.42));
+        frame.style.width = COMP_W * scale + "px";
+        frame.style.height = COMP_H * scale + "px";
+        frame.classList.toggle("letterbox", COMP_H * scale < vh - 1);
+      }
+      addEventListener("resize", layout);
+      layout();
+
+      let player = null;
+      const script = document.createElement("script");
+      script.src = "vendor/hyperframes-player-0.8.198.js";
+      script.onload = () => {
+        player = document.createElement("hyperframes-player");
+        player.setAttribute("runtime-src", new URL("motion/landing/assets/vendor/hyperframes-runtime-0.8.198.js", location.href).href);
+        player.setAttribute("disable-click-to-play", "");
+        player.setAttribute("assets-loading-ui", "none");
+        player.setAttribute("muted", "");
+        player.setAttribute("src", "motion/landing/index.html");
+        frame.appendChild(player);
+      };
+      document.head.appendChild(script);
+
+      const scrollFraction = () => {
+        const max = document.documentElement.scrollHeight - innerHeight;
+        return max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0;
+      };
+
+      let shown = -1,
+        current = 0,
+        last = performance.now();
+      function tick(now) {
+        const dt = Math.min(0.1, (now - last) / 1000);
+        last = now;
+        if (player && player.ready && player.duration) {
+          if (!frame.classList.contains("ready")) {
+            player.pause();
+            current = scrollFraction() * player.duration;
+            frame.classList.add("ready");
+          }
+          const target = scrollFraction() * player.duration;
+          current += (target - current) * (1 - Math.exp(-dt * 7));
+          if (Math.abs(target - current) < 0.002) current = target;
+          if (Math.abs(current - shown) > 0.0005) {
+            player.seek(current);
+            shown = current;
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      // Film grain: fresh noise about 18 times a second.
+      const grain = document.getElementById("grain");
+      const g = grain.getContext("2d");
+      let noise = null;
+      function sizeGrain() {
+        // Half the screen's pixels, stretched: fine, soft grain rather than square noise.
+        grain.width = Math.ceil(innerWidth / 1.6);
+        grain.height = Math.ceil(innerHeight / 1.6);
+        noise = g.createImageData(grain.width, grain.height);
+      }
+      sizeGrain();
+      addEventListener("resize", sizeGrain);
+      let lastGrain = 0;
+      function drawGrain(now) {
+        if (now - lastGrain > 55) {
+          lastGrain = now;
+          const d = noise.data;
+          for (let i = 0; i < d.length; i += 4) {
+            const v = (Math.random() * 255) | 0;
+            d[i] = d[i + 1] = d[i + 2] = v;
+            d[i + 3] = 255;
+          }
+          g.putImageData(noise, 0, 0);
+        }
+        requestAnimationFrame(drawGrain);
+      }
+      requestAnimationFrame(drawGrain);
+    </script>
+  </body>
+</html>
