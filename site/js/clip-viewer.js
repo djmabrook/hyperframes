@@ -1,6 +1,6 @@
 // Feature "clipViewer": clicking a clip in the bin sends it to the colour page's viewer, the
 // smaller monitor on the right, and it starts playing there. The camera turns to frame the
-// viewer beside the bin (above it on narrow screens). Scroll on, or press Esc, and the camera
+// viewer beside the bin, or above it when that leaves more room. Scroll on, or press Esc, and the camera
 // goes back to the page and the clip pauses. Click the viewer to pause or play.
 // Off, a clip opens full size in a dialog instead.
 import { THREE, VIEW } from "../motion/workspace/scene.js";
@@ -27,19 +27,24 @@ export function setupClipViewer({ ws }) {
     video.pause();
   };
 
-  // Frame the viewer where the bin panel leaves room: to its left, or above it on narrow
-  // screens, scrolling the panel down a little to make that room.
+  // Frame the viewer where the bin panel leaves the most room: to its left, or above it,
+  // scrolling the panel down a little to make that room.
   function frameBesidePanel() {
     const r = panel.getBoundingClientRect();
-    state.anchor = scrollY;
-    if (r.width < innerWidth * 0.6) {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    const want = Math.max(innerHeight * 0.4, innerHeight - r.height - 16);
+    const above = Math.min(max, Math.max(0, scrollY + r.top - want));
+    const top = r.top - (above - scrollY);
+    // The widest 16:9 picture each side can hold, in pixels.
+    const fits = (w, h) => Math.min(w, (h * 16) / 9);
+    const leftRoom = fits(r.left * 0.9, innerHeight * 0.8);
+    const aboveRoom = fits(innerWidth * 0.9, top * 0.8);
+    if (leftRoom >= aboveRoom) {
+      state.anchor = scrollY;
       ws.setFocus(0, { x0: 0.02, x1: r.left / innerWidth - 0.02, y0: 0.08, y1: 0.92 });
       return;
     }
-    const max = document.documentElement.scrollHeight - innerHeight;
-    const want = Math.max(innerHeight * 0.4, innerHeight - r.height - 16);
-    state.anchor = Math.min(max, Math.max(0, scrollY + r.top - want));
-    const top = r.top - (state.anchor - scrollY);
+    state.anchor = above;
     ws.setFocus(0, { x0: 0, x1: 1, y0: 0.03, y1: Math.max(0.2, top / innerHeight - 0.02) });
     if (state.anchor !== scrollY) {
       state.settleUntil = performance.now() + 1200;
