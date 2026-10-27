@@ -4,7 +4,7 @@
 // to scrub it, and drag a colour wheel's puck to grade it, gently.
 import { createWorkspace, STOPS, THREE, TIMELINE, WHEELS, PUCK_REACH } from "../motion/workspace/scene.js";
 import { FEATURES } from "./features.js";
-import { CLIPS } from "./clips.js";
+import { CLIPS, COLUMNS } from "./clips.js";
 import { setupBinPreviews } from "./bin-previews.js";
 import { setupLiveScopes } from "./live-scopes.js";
 import { setupClipViewer } from "./clip-viewer.js";
@@ -16,31 +16,47 @@ document.getElementById("year").textContent = String(new Date().getFullYear());
 if (FEATURES.lowerThird) import("./lower-third.js");
 
 // ---------- Clip bin ----------
-// Each tab's list is built from js/clips.js. A clip's button carries its tab and index.
+// Each tab's list is built from js/clips.js. A clip's button carries its tab and index. Tabs
+// with columns get a header row and one cell per column, like a bin in list view.
+const span = (className, text) => {
+  const el = document.createElement("span");
+  el.className = className;
+  el.textContent = text;
+  return el;
+};
 for (const list of document.querySelectorAll("[data-bin]")) {
   const tab = list.dataset.bin;
+  const columns = COLUMNS[tab];
+  if (columns) {
+    list.classList.add("cols");
+    const head = document.createElement("li");
+    head.className = "head";
+    head.setAttribute("aria-hidden", "true");
+    head.append(span("chip-gap", ""), span("thumb-gap", ""), ...columns.map(([key, label]) => span(`c c-${key}`, label)));
+    list.append(head);
+  }
   CLIPS[tab].forEach((clip, i) => {
     const li = document.createElement("li");
     if (clip.placeholder !== false) li.className = "ph";
     const button = document.createElement("button");
     button.type = "button";
     button.dataset.clip = `${tab}:${i}`;
-    const chip = document.createElement("span");
-    chip.className = "chip";
+    const chip = span("chip", "");
     chip.style.setProperty("--c", clip.colour || "#8b9099");
     const img = document.createElement("img");
     img.src = clip.poster || "";
     img.alt = "";
     img.loading = "lazy";
-    const title = document.createElement("span");
-    title.className = "t";
-    title.textContent = clip.title;
-    button.append(chip, img, title);
-    if (clip.note) {
-      const note = document.createElement("span");
-      note.className = "s";
-      note.textContent = clip.note;
-      button.append(note);
+    button.append(chip, img);
+    if (columns) {
+      for (const [key, label] of columns) {
+        const cell = span(`c c-${key}${key === "title" ? " t" : ""}`, clip[key] || "");
+        if (key !== "title") cell.dataset.label = label;
+        button.append(cell);
+      }
+    } else {
+      button.append(span("t", clip.title));
+      if (clip.note) button.append(span("s", clip.note));
     }
     li.append(button);
     list.append(li);
