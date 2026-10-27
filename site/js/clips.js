@@ -19,7 +19,7 @@ export const COLUMNS = {
 export const CLIPS = {
   documentary: [
     { title: "Untitled Rajie Cook Documentary", year: "2024–2026", format: "Feature Documentary", credit: "Editor", video: "media/doc-rajie-cook.mp4", poster: "media/doc-rajie-cook.jpg", colour: "#f2a541", placeholder: false },
-    { title: "Shawn White: The Last Run", year: "2022–2023", episodes: "4", format: "HBO Max Docu-series", credit: "Editor", video: "media/doc-shaun-white.mp4", poster: "media/doc-shaun-white.jpg", colour: "#9b8ad6", placeholder: false },
+    { title: "Shaun White: The Last Run", year: "2022–2023", episodes: "4", format: "HBO Max Docu-series", credit: "Editor", video: "media/doc-shaun-white.mp4", poster: "media/doc-shaun-white.jpg", colour: "#9b8ad6", placeholder: false },
     { title: "Sugaring", year: "2021–2023", episodes: "4", format: "Showtime Docu-series", credit: "Editor", video, poster, colour: "#5a7be0", placeholder: false },
     { title: "Badass Librarians of Timbuktu", year: "2021–2022", format: "Feature Documentary", credit: "Editor", video: "media/doc-badass-librarians.mp4", poster: "media/doc-badass-librarians.jpg", colour: "#22b3a5", placeholder: false },
     { title: "Marianne", year: "2019–2021", format: "Feature Documentary", credit: "Editor", video: "media/doc-marianne.mp4", poster: "media/doc-marianne.jpg", colour: "#c79fe0", placeholder: false },
