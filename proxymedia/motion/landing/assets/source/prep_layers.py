@@ -4,7 +4,7 @@ from scipy.ndimage import binary_fill_holes
 K='k4/'; O='o4/'
 import os; os.makedirs(O,exist_ok=True)
 rd=lambda f: cv2.imread(K+f)
-f01,f02,f03,f04,f05,f06,f07=[rd(f) for f in ['01-proxy-media-vhs-4k.png','02-tape-transition-4k.png','03-tape-before-vcr-4k.png','04-vcr-empty-slot-4k.png','05-vcr-tape-loaded-4k.png','06-sony-tv-4k.png','07-tv-screen-closeup-4k.png']]
+f01,f03,f04,f05,f06,f07=[rd(f) for f in ['01-proxy-media-vhs-4k.png','03-tape-before-vcr-4k.png','04-vcr-empty-slot-4k.png','05-vcr-tape-loaded-4k.png','06-sony-tv-4k.png','07-tv-screen-closeup-4k.png']]
 H,W=2160,3840
 def membrane(img, hole, k=16, iters=2500):
     bl=cv2.GaussianBlur(img,(0,0),k/2).astype(np.float32)
@@ -50,42 +50,17 @@ def save_rgba(path, img, a, box):
 def bbox(m,pad=4):
     ys,xs=np.where(m); return [max(xs.min()-pad,0),max(ys.min()-pad,0),min(xs.max()+pad+1,W),ys.max()+pad+1]
 meta={}
-# ---- wall: 01 at y=0, 02 at y=DY (text-registered) ----
-DY,DX=831,2
-CH=H+DY
-t01=dark_mask(f01); t02=dark_mask(f02)
-canvas=np.zeros((CH,W,3),np.uint8)
-s02=np.zeros_like(f02); s02[:,DX:]=f02[:,:W-DX]; s02[:,:DX]=f02[:,:1]
-canvas[DY:]=s02
-# exposure: match 01 to 02 over clean overlap rows
-ov=slice(900,1600); colmask=np.ones(W,bool); colmask[1200:2650]=False
-a1=f01[ov][:,colmask].reshape(-1,3).astype(np.float32).mean(0); a2=canvas[ov][:,colmask].reshape(-1,3).astype(np.float32).mean(0)
-gain=a2/a1; print('gain 01->02',gain); meta['gain01']=gain.tolist()
-g01=np.clip(f01*gain,0,255).astype(np.uint8)
-# above the 02 frame: 02's own wall mirrored (only seen under the 01 frame as it fades)
-canvas[:DY]=canvas[DY:2*DY][::-1]
-# tape02, its shadow and the warm bounce light beside it
-t02c=np.zeros((CH,W),bool); t02c[DY:, DX:]=t02[:, :W-DX]
-yb=np.where(t02c.any(1))[0]; xb=np.where(t02c.any(0))[0]
-holeB=np.zeros((CH,W),bool); holeB[yb.min()-40:min(yb.max()+300,CH), xb.min()-160:xb.max()+330]=True
-canvas=fill(canvas,holeB,axis=1)
-cv2.imwrite(O+'wall-clean.png',canvas)
-# 01 over the clean wall, with a feathered hole where the tape and its shadow are
-holeT1=cv2.dilate(t01.astype(np.uint8),np.ones((301,301),np.uint8))>0
-holeT1[t01.any(1).nonzero()[0].min()-150:t01.any(1).nonzero()[0].max()+150, :t01.any(0).nonzero()[0].max()+260] |= holeT1[t01.any(1).nonzero()[0].min()-150:t01.any(1).nonzero()[0].max()+150, :t01.any(0).nonzero()[0].max()+260]
-a1=1-np.clip(cv2.GaussianBlur(holeT1.astype(np.float32),(0,0),40)*1.6,0,1); a1[t01]=0
-save_rgba(O+'wall-01.png', g01, a1, [0,0,W,H])
-cl01=canvas[:H]
-sh1=shadow(g01, cl01, holeT1.astype(np.float32), t01)
+# ---- wall: frame 1 alone. The tape and its shadow are lifted off and the wall under them
+#      rebuilt from frame 1's own plaster (smooth light from the surround, texture mirrored in).
+t01=dark_mask(f01)
+ty=np.where(t01.any(1))[0]; tx=np.where(t01.any(0))[0]
+hole=np.zeros((H,W),bool); hole[ty.min()-60:ty.max()+200, tx.min()-170:tx.max()+260]=True
+clean=fill(f01,hole,axis=1,feather=30)
+cv2.imwrite(O+'wall-clean.png',clean)
+reg=(cv2.dilate(t01.astype(np.uint8),np.ones((301,301),np.uint8))>0).astype(np.float32)*hole
+sh1=shadow(f01, clean, reg, t01)
 b=bbox(sh1>0,20); save_rgba(O+'tape01-shadow.png', np.zeros_like(f01), sh1, b); meta['tape01_shadow']=b
-a=cv2.GaussianBlur(t01.astype(np.float32),(0,0),1.2); b=bbox(t01); save_rgba(O+'tape01.png', g01, a, b); meta['tape01']=b
-# tape02 and shadow (in 02 coords, shifted into canvas)
-cl02=canvas[DY:]
-reg2=(cv2.dilate(t02c[DY:].astype(np.uint8),np.ones((301,301),np.uint8))>0).astype(np.float32)
-sh2=shadow(s02, cl02, reg2, t02c[DY:])
-b=bbox(sh2>0,20); save_rgba(O+'tape02-shadow.png', np.zeros_like(f01), sh2, b); meta['tape02_shadow']=[b[0],b[1]+DY,b[2],b[3]+DY]
-a=cv2.GaussianBlur(t02c[DY:].astype(np.float32),(0,0),1.2); b=bbox(t02c[DY:]); save_rgba(O+'tape02.png', s02, a, b); meta['tape02']=[b[0],b[1]+DY,b[2],b[3]+DY]
-meta['wall']={'h':CH,'dy':DY}
+a=cv2.GaussianBlur(t01.astype(np.float32),(0,0),1.2); b=bbox(t01); save_rgba(O+'tape01.png', f01, a, b); meta['tape01']=b
 # ---- VCR ----
 A4=np.float32([[1.00043,-8e-05,-1.44408],[8e-05,1.00043,-1.37641]]); A5=np.float32([[0.99986,0.00039,1.10238],[-0.00039,0.99986,2.02451]])
 w4=cv2.warpAffine(f04,A4,(W,H),borderMode=cv2.BORDER_REPLICATE); w5=cv2.warpAffine(f05,A5,(W,H),borderMode=cv2.BORDER_REPLICATE)
