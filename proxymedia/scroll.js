@@ -172,7 +172,8 @@
   }
   // Hand the tape (tape/tape-ribbons.js) where the TV photograph is on screen
   // and how far the tape has unspooled. k is CSS px per #tv-shot px; ox/oy is
-  // where #tv-shot's origin sits, relative to the stage.
+  // where #tv-shot's origin sits, relative to the stage, so the framing holds
+  // as the stage scrolls away and the tape stays hanging over what follows.
   function publishStage() {
     const st = player.iframeElement.contentWindow.__proxyScene.state;
     const f = frame.getBoundingClientRect();
@@ -187,8 +188,12 @@
       width: g.width,
       height: g.height,
       feed,
-      // Only live once the camera has landed on the TV.
-      active: current >= player.duration - 0.001 && scrollY < landing.offsetHeight,
+      // Live once the camera has landed on the TV, and until the wall after
+      // the landing (#notes, where the tape dangles past the writing) or,
+      // without it, the landing itself has scrolled out of view.
+      active:
+        current >= player.duration - 0.001 &&
+        (document.getElementById("notes") || landing).getBoundingClientRect().bottom > 0,
     };
     const prev = window.__proxyStage;
     if (

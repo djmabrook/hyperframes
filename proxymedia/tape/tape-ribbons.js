@@ -843,6 +843,17 @@ function frameLoop(now) {
   if (onScreen && idle < 1) raf = requestAnimationFrame(frameLoop);
 }
 
+// The tape layer is fixed to the viewport. It stays put while the stage
+// scrolls away (so the strands dangle over the wall that follows, #notes) and
+// scrolls off with that wall's bottom edge, or the landing's when it is absent.
+function place() {
+  const holder = document.getElementById("notes") || document.getElementById("landing");
+  const off = Math.min(0, holder.getBoundingClientRect().bottom - innerHeight);
+  canvas.style.transform = off ? `translate3d(0, ${off}px, 0)` : "";
+}
+addEventListener("scroll", place, { passive: true });
+addEventListener("resize", place, { passive: true });
+
 addEventListener("proxy-stage", (e) => onStage(e.detail));
 if (stage) onStage(stage);
 

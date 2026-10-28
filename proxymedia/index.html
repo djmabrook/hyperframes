@@ -60,11 +60,18 @@
         overflow: hidden;
         background: var(--wall);
       }
+      /* The tape hangs in its own fixed layer, above the stage and whatever
+         scrolls in after the landing (it dangles over the next wall), under
+         the vignette and grain. tape-ribbons.js scrolls it away when that
+         section leaves. */
       #tape {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
+        position: fixed;
+        z-index: 40;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100svh;
         pointer-events: none;
         visibility: hidden;
       }
@@ -108,6 +115,7 @@
       /* Warm falloff and live film grain over everything. */
       #vignette {
         position: fixed;
+        z-index: 50;
         inset: 0;
         pointer-events: none;
         background: radial-gradient(
@@ -124,6 +132,7 @@
         inset: -2px;
         width: calc(100% + 4px);
         height: calc(100% + 4px);
+        z-index: 50;
         pointer-events: none;
         opacity: 0.055;
         mix-blend-mode: overlay;
@@ -155,14 +164,14 @@
         <div id="frame">
           <img id="poster" src="media/poster.webp" alt="" />
         </div>
-        <canvas id="tape"></canvas>
-        <div id="vignette"></div>
-        <div id="grain"></div>
       </div>
     </div>
     <main id="site-content" aria-label="Proxy Media">
       <!-- Future site content lives here after the screen fills the viewport. -->
     </main>
+    <canvas id="tape" aria-hidden="true"></canvas>
+    <div id="vignette" aria-hidden="true"></div>
+    <div id="grain" aria-hidden="true"></div>
     <script src="vendor/hyperframes-player-0.8.198.js" defer></script>
     <script src="scroll.js" defer></script>
     <script type="module" src="tape/tape-ribbons.js"></script>
