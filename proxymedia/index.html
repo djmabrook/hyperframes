@@ -126,22 +126,12 @@
         <!-- Future site content lives here after the screen fills the viewport. -->
       </main>
     </div>
-    <section id="whiteboard" class="scene" aria-label="Whiteboard">
+    <section id="notes" class="scene" aria-label="Projects">
       <div class="scene-view">
-        <div class="wb-rig">
-          <div class="wb-board">
-            <canvas class="wb-surface" aria-hidden="true"></canvas>
-            <canvas class="wb-writing" aria-hidden="true"></canvas>
-            <canvas class="wb-ink" aria-hidden="true"></canvas>
-          </div>
-          <div class="wb-tray">
-            <span class="wb-marker" style="--cap: #1f4fb5"></span>
-            <span class="wb-marker" style="--cap: #c62a2a"></span>
-            <span class="wb-marker" style="--cap: #1d8a4a"></span>
-            <span class="wb-marker" style="--cap: #222226"></span>
-            <button class="wb-eraser" type="button" aria-label="Erase" title="Erase"></button>
-          </div>
-        </div>
+        <canvas class="nt-writing" aria-hidden="true"></canvas>
+        <canvas class="nt-ink" aria-hidden="true"></canvas>
+        <button class="nt-sharpie" type="button" aria-label="Sharpie" title="Sharpie"><i></i></button>
+        <button class="nt-roller" type="button" aria-label="Paint over" title="Paint over"><i></i></button>
       </div>
       <div class="visually-hidden">
         <h2>In Development</h2>
@@ -226,7 +216,7 @@
     <div id="grain" aria-hidden="true"></div>
     <script src="vendor/hyperframes-player-0.8.198.js" defer></script>
     <script src="scroll.js" defer></script>
-    <script src="sections/whiteboard.js" defer></script>
+    <script src="sections/notes.js" defer></script>
     <script src="sections/mailbox.js" defer></script>
   </body>
 </html>
