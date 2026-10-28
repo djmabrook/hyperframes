@@ -267,6 +267,8 @@ function build(view) {
     }
     verts += m;
   }
+  // Release the old GPU buffers before replacing their attributes on resize.
+  geometry.dispose();
   geometry.setIndex(index);
   geometry.setAttribute("position", new THREE.BufferAttribute(new Float32Array(verts * 6), 3));
   geometry.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(verts * 6), 3));
@@ -284,6 +286,7 @@ function build(view) {
     owner,
     head: new Int32Array(cells),
     next: new Int32Array(total),
+    cellCoords: new Int32Array(total * 3),
     cells,
     samples: new Float32Array(Math.max(...streams.map((s) => s.m)) * 3),
   };
@@ -415,9 +418,12 @@ function curl(B, s) {
       A[7] += pz * ry;
       A[8] += pz * rz;
     }
-    const q = s.rot.subarray(w * 4, w * 4 + 4);
-    extractRotation(A, q);
-    const [x, y, z, ww] = q;
+    const qi = w * 4;
+    extractRotation(A, s.rot, qi);
+    const x = s.rot[qi],
+      y = s.rot[qi + 1],
+      z = s.rot[qi + 2],
+      ww = s.rot[qi + 3];
     // Rotation matrix from the quaternion.
     const m00 = 1 - 2 * (y * y + z * z),
       m01 = 2 * (x * y - z * ww),
@@ -442,32 +448,35 @@ function curl(B, s) {
   }
 }
 
-function extractRotation(A, q) {
+function extractRotation(A, q, offset) {
   for (let it = 0; it < 4; it++) {
-    const [x, y, z, w] = q;
-    // Columns of R(q).
-    const r0 = [1 - 2 * (y * y + z * z), 2 * (x * y + z * w), 2 * (x * z - y * w)];
-    const r1 = [2 * (x * y - z * w), 1 - 2 * (x * x + z * z), 2 * (y * z + x * w)];
-    const r2 = [2 * (x * z + y * w), 2 * (y * z - x * w), 1 - 2 * (x * x + y * y)];
-    const a0 = [A[0], A[3], A[6]],
-      a1 = [A[1], A[4], A[7]],
-      a2 = [A[2], A[5], A[8]];
-    const ox =
-      r0[1] * a0[2] - r0[2] * a0[1] + r1[1] * a1[2] - r1[2] * a1[1] + r2[1] * a2[2] - r2[2] * a2[1];
-    const oy =
-      r0[2] * a0[0] - r0[0] * a0[2] + r1[2] * a1[0] - r1[0] * a1[2] + r2[2] * a2[0] - r2[0] * a2[2];
-    const oz =
-      r0[0] * a0[1] - r0[1] * a0[0] + r1[0] * a1[1] - r1[1] * a1[0] + r2[0] * a2[1] - r2[1] * a2[0];
+    const x = q[offset],
+      y = q[offset + 1],
+      z = q[offset + 2],
+      w = q[offset + 3];
+    // Columns of R(q), kept as scalars: this runs thousands of times per frame.
+    const r00 = 1 - 2 * (y * y + z * z),
+      r01 = 2 * (x * y + z * w),
+      r02 = 2 * (x * z - y * w);
+    const r10 = 2 * (x * y - z * w),
+      r11 = 1 - 2 * (x * x + z * z),
+      r12 = 2 * (y * z + x * w);
+    const r20 = 2 * (x * z + y * w),
+      r21 = 2 * (y * z - x * w),
+      r22 = 1 - 2 * (x * x + y * y);
+    const ox = r01 * A[6] - r02 * A[3] + r11 * A[7] - r12 * A[4] + r21 * A[8] - r22 * A[5];
+    const oy = r02 * A[0] - r00 * A[6] + r12 * A[1] - r10 * A[7] + r22 * A[2] - r20 * A[8];
+    const oz = r00 * A[3] - r01 * A[0] + r10 * A[4] - r11 * A[1] + r20 * A[5] - r21 * A[2];
     const dot =
-      r0[0] * a0[0] +
-      r0[1] * a0[1] +
-      r0[2] * a0[2] +
-      r1[0] * a1[0] +
-      r1[1] * a1[1] +
-      r1[2] * a1[2] +
-      r2[0] * a2[0] +
-      r2[1] * a2[1] +
-      r2[2] * a2[2];
+      r00 * A[0] +
+      r01 * A[3] +
+      r02 * A[6] +
+      r10 * A[1] +
+      r11 * A[4] +
+      r12 * A[7] +
+      r20 * A[2] +
+      r21 * A[5] +
+      r22 * A[8];
     const inv = 1 / (Math.abs(dot) + 1e-9);
     const wx = ox * inv,
       wy = oy * inv,
@@ -485,10 +494,10 @@ function extractRotation(A, q) {
       nz = dw * z + dx * y - dy * x + dz * w,
       nw = dw * w - dx * x - dy * y - dz * z;
     const l = Math.hypot(nx, ny, nz, nw) || 1;
-    q[0] = nx / l;
-    q[1] = ny / l;
-    q[2] = nz / l;
-    q[3] = nw / l;
+    q[offset] = nx / l;
+    q[offset + 1] = ny / l;
+    q[offset + 2] = nz / l;
+    q[offset + 3] = nw / l;
   }
 }
 
@@ -516,17 +525,16 @@ function link(B, a, b, rest, stiff) {
 // Particle-particle contact through a spatial hash, so loops catch on each
 // other and tangle. Neighbours along the same strand are skipped.
 function collide(B) {
-  const { pos, inv, head, next, cells, owner, radius } = B;
+  const { pos, inv, head, next, cells, cellCoords, owner, radius } = B;
   const size = radius * 2;
   head.fill(-1);
-  const cellOf = (x, y, z) =>
-    ((Math.floor(x / size) * 73856093) ^
-      (Math.floor(y / size) * 19349663) ^
-      (Math.floor(z / size) * 83492791)) &
-    (cells - 1);
   for (let g = 0; g < B.total; g++) {
     if (!inv[g]) continue;
-    const c = cellOf(pos[g * 3], pos[g * 3 + 1], pos[g * 3 + 2]);
+    const g3 = g * 3;
+    const cx = (cellCoords[g3] = Math.floor(pos[g3] / size));
+    const cy = (cellCoords[g3 + 1] = Math.floor(pos[g3 + 1] / size));
+    const cz = (cellCoords[g3 + 2] = Math.floor(pos[g3 + 2] / size));
+    const c = ((cx * 73856093) ^ (cy * 19349663) ^ (cz * 83492791)) & (cells - 1);
     next[g] = head[c];
     head[c] = g;
   }
@@ -534,12 +542,9 @@ function collide(B) {
   for (let a = 0; a < B.total; a++) {
     if (!inv[a]) continue;
     const a3 = a * 3;
-    const ax = pos[a3],
-      ay = pos[a3 + 1],
-      az = pos[a3 + 2];
-    const cx = Math.floor(ax / size),
-      cy = Math.floor(ay / size),
-      cz = Math.floor(az / size);
+    const cx = cellCoords[a3],
+      cy = cellCoords[a3 + 1],
+      cz = cellCoords[a3 + 2];
     for (let ix = -1; ix <= 1; ix++)
       for (let iy = -1; iy <= 1; iy++)
         for (let iz = -1; iz <= 1; iz++) {
@@ -550,9 +555,17 @@ function collide(B) {
             if (b <= a) continue;
             if (owner[a] === owner[b] && b - a <= 3) continue;
             const b3 = b * 3;
-            const dx = pos[b3] - ax,
-              dy = pos[b3 + 1] - ay,
-              dz = pos[b3 + 2] - az;
+            // Hash buckets can alias, including within these 27 neighbours.
+            if (
+              cellCoords[b3] !== cx + ix ||
+              cellCoords[b3 + 1] !== cy + iy ||
+              cellCoords[b3 + 2] !== cz + iz
+            )
+              continue;
+            // Earlier contacts may already have moved a; use its current position.
+            const dx = pos[b3] - pos[a3],
+              dy = pos[b3 + 1] - pos[a3 + 1],
+              dz = pos[b3 + 2] - pos[a3 + 2];
             const d2 = dx * dx + dy * dy + dz * dz;
             if (d2 >= min2 || d2 < 1e-8) continue;
             const d = Math.sqrt(d2);
@@ -745,11 +758,16 @@ function draw(B) {
 
 // ---------------------------------------------------------------- framing
 
+const renderSize = new THREE.Vector2();
 function frameCamera() {
   const s = stage;
   const dpr = Math.min(devicePixelRatio || 1, Q.dpr);
-  renderer.setPixelRatio(dpr);
-  renderer.setSize(s.width, s.height, false);
+  // setPixelRatio calls setSize internally; avoid reallocating/clearing the
+  // drawing buffer for every feed or strain update.
+  if (renderer.getPixelRatio() !== dpr) renderer.setPixelRatio(dpr);
+  renderer.getSize(renderSize);
+  if (renderSize.x !== s.width || renderSize.y !== s.height)
+    renderer.setSize(s.width, s.height, false);
   const v = viewOf(s);
   const cx = v.left + v.w / 2,
     cy = v.top + v.h / 2;
@@ -820,7 +838,7 @@ function frameLoop(now) {
   if (out) draw(built);
   // Sleep once the tape is fully reeled in (or the stage has scrolled away)
   // and nothing is settling.
-  const onScreen = stage.active || feed > 0;
+  const onScreen = stage.active || out;
   idle = !out && target === 0 ? idle + dt : 0;
   if (onScreen && idle < 1) raf = requestAnimationFrame(frameLoop);
 }
@@ -862,6 +880,7 @@ addEventListener(
   { passive: true },
 );
 addEventListener("touchend", () => (pointer.on = false), { passive: true });
+addEventListener("touchcancel", () => (pointer.on = false), { passive: true });
 
 window.__proxyTape = {
   get feed() {

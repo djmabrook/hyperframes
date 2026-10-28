@@ -205,7 +205,7 @@
   addEventListener(
     "wheel",
     (e) => {
-      if (e.ctrlKey || e.deltaY <= 0 || !inStrainZone() || motion.matches) return;
+      if (!e.cancelable || e.ctrlKey || e.deltaY <= 0 || !inStrainZone() || motion.matches) return;
       e.preventDefault();
       const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
       scrollBy(0, Math.max(1, e.deltaY * unit * 0.4));

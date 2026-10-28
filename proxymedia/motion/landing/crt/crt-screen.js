@@ -315,11 +315,18 @@
     program.play().catch(() => {});
     trackUntil = now + 450;
     current = program;
+    blue.pause();
   }
   function setProgram(src) {
     if (program) {
       program.pause();
-      if (current === program) showBlue();
+      if (current === program) {
+        current = null;
+        if (api.state !== "off") showBlue();
+      }
+      // Release the previous resource, including pending preload/network work.
+      program.removeAttribute("src");
+      program.load();
     }
     program = src ? video(src, true) : null;
   }
