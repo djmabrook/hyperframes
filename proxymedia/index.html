@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Proxy Media</title>
     <link rel="preload" as="image" href="media/poster.webp" />
+    <link rel="stylesheet" href="sections/sections.css" />
     <style>
       :root {
         --wall: #e4ddd5;
@@ -19,13 +20,18 @@
       }
       body {
         background: var(--wall);
-        /* The scroll length drives the sequence; nothing else lives on the page yet. */
-        height: 900svh;
+      }
+      /* The landing's scroll length drives the sequence; the sections after it
+         (sections/) scroll in below once the stage lets go. */
+      #landing {
+        position: relative;
         height: 900vh;
       }
       #stage {
-        position: fixed;
-        inset: 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        height: 100dvh;
         overflow: hidden;
         background: var(--wall);
       }
@@ -66,6 +72,7 @@
       /* Warm falloff and live film grain over everything. */
       #vignette {
         position: fixed;
+        z-index: 50;
         inset: 0;
         pointer-events: none;
         background: radial-gradient(
@@ -82,13 +89,18 @@
         inset: -2px;
         width: calc(100% + 4px);
         height: calc(100% + 4px);
+        z-index: 50;
         pointer-events: none;
         opacity: 0.055;
         mix-blend-mode: overlay;
       }
       #site-content {
-        position: fixed;
-        inset: 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        height: 100dvh;
+        margin-top: -100vh;
+        margin-top: -100dvh;
         z-index: 2;
         pointer-events: none;
         opacity: var(--screen-progress, 0);
@@ -104,17 +116,117 @@
     </style>
   </head>
   <body>
-    <div id="stage" aria-hidden="true">
-      <div id="frame">
-        <img id="poster" src="media/poster.webp" alt="" />
+    <div id="landing">
+      <div id="stage" aria-hidden="true">
+        <div id="frame">
+          <img id="poster" src="media/poster.webp" alt="" />
+        </div>
       </div>
-      <div id="vignette"></div>
-      <div id="grain"></div>
+      <main id="site-content" aria-label="Proxy Media">
+        <!-- Future site content lives here after the screen fills the viewport. -->
+      </main>
     </div>
-    <main id="site-content" aria-label="Proxy Media">
-      <!-- Future site content lives here after the screen fills the viewport. -->
-    </main>
+    <section id="whiteboard" class="scene" aria-label="Whiteboard">
+      <div class="scene-view">
+        <div class="wb-rig">
+          <div class="wb-board">
+            <canvas class="wb-surface" aria-hidden="true"></canvas>
+            <canvas class="wb-writing" aria-hidden="true"></canvas>
+            <canvas class="wb-ink" aria-hidden="true"></canvas>
+          </div>
+          <div class="wb-tray">
+            <span class="wb-marker" style="--cap: #1f4fb5"></span>
+            <span class="wb-marker" style="--cap: #c62a2a"></span>
+            <span class="wb-marker" style="--cap: #1d8a4a"></span>
+            <span class="wb-marker" style="--cap: #222226"></span>
+            <button class="wb-eraser" type="button" aria-label="Erase" title="Erase"></button>
+          </div>
+        </div>
+      </div>
+      <div class="visually-hidden">
+        <h2>In Development</h2>
+        <ul>
+          <li>AI Psychosis Doc</li>
+          <li>Bodega Guy Short</li>
+        </ul>
+        <h2>In Production</h2>
+        <ul>
+          <li>Nick County music vid</li>
+        </ul>
+        <h2>Out Now</h2>
+      </div>
+    </section>
+    <section id="mailbox" class="scene" aria-label="Contact">
+      <div class="scene-view">
+        <div class="mb-wall-dim" aria-hidden="true"></div>
+        <div class="mb-camera">
+          <div class="mb-rig" aria-hidden="true">
+            <div class="mb-shadow"></div>
+            <div class="mb-face mb-side mb-left"></div>
+            <div class="mb-face mb-side mb-right"></div>
+            <div class="mb-face mb-cap mb-top"></div>
+            <div class="mb-face mb-cap mb-bottom"></div>
+            <div class="mb-cubby">
+              <div class="mb-cubby-back"></div>
+              <div class="mb-cubby-wall mb-cubby-l"></div>
+              <div class="mb-cubby-wall mb-cubby-r"></div>
+              <div class="mb-cubby-floor mb-cubby-t"></div>
+              <div class="mb-cubby-floor mb-cubby-b"></div>
+            </div>
+            <div class="mb-front">
+              <div class="mb-rail"></div>
+              <div class="mb-door" style="--i: 0"><i class="mb-slot"></i><i class="mb-lock"></i></div>
+              <div class="mb-door" style="--i: 1"><i class="mb-slot"></i><i class="mb-lock"></i></div>
+              <div class="mb-door" style="--i: 3"><i class="mb-slot"></i><i class="mb-lock"></i></div>
+              <div class="mb-door" style="--i: 4"><i class="mb-slot"></i><i class="mb-lock"></i></div>
+              <div class="mb-bezel"></div>
+            </div>
+            <div class="mb-door mb-door-open" style="--i: 2">
+              <div class="mb-door-front">
+                <i class="mb-hole"></i>
+                <div class="mb-label"><b>U.S. MAIL</b><i></i><i></i></div>
+                <i class="mb-slot"></i><i class="mb-lock"></i>
+              </div>
+              <div class="mb-door-back"></div>
+            </div>
+          </div>
+          <form
+            class="mb-form"
+            name="contact"
+            method="POST"
+            action="/"
+            data-netlify="true"
+            netlify-honeypot="bot-field"
+          >
+            <input type="hidden" name="form-name" value="contact" />
+            <p class="mb-hp">
+              <label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+            </p>
+            <label class="mb-field">
+              <span>Name</span>
+              <input name="name" type="text" autocomplete="name" required />
+            </label>
+            <label class="mb-field">
+              <span>Email</span>
+              <input name="email" type="email" autocomplete="email" required />
+            </label>
+            <label class="mb-field">
+              <span>Message</span>
+              <textarea name="message" rows="5" required></textarea>
+            </label>
+            <div class="mb-actions">
+              <button type="submit">Send</button>
+              <output class="mb-status" aria-live="polite"></output>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+    <div id="vignette" aria-hidden="true"></div>
+    <div id="grain" aria-hidden="true"></div>
     <script src="vendor/hyperframes-player-0.8.198.js" defer></script>
     <script src="scroll.js" defer></script>
+    <script src="sections/whiteboard.js" defer></script>
+    <script src="sections/mailbox.js" defer></script>
   </body>
 </html>

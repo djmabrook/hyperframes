@@ -39,7 +39,7 @@ const { chromium } = require("playwright");
     assert.equal(deterministic, true);
     for (const fraction of [0, 0.24, 0.385, 0.46, 0.565, 0.68, 1, 0]) {
       await page.evaluate(
-        (f) => scrollTo(0, f * (document.documentElement.scrollHeight - innerHeight)),
+        (f) => scrollTo(0, f * (document.getElementById("landing").offsetHeight - innerHeight)),
         fraction,
       );
       await page.waitForTimeout(1100);
@@ -81,7 +81,7 @@ const { chromium } = require("playwright");
   });
   await reduced.goto(process.env.PROXY_URL || "http://127.0.0.1:4174");
   await reduced.waitForFunction(() => document.querySelector("#frame.ready"));
-  await reduced.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+  await reduced.evaluate(() => scrollTo(0, document.getElementById("landing").offsetHeight - innerHeight));
   await reduced.waitForTimeout(150);
   assert.equal(await reduced.evaluate(() => document.body.dataset.sequenceComplete), "true");
   assert.deepEqual(errors, []);

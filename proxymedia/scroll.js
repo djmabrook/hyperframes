@@ -2,6 +2,7 @@
 (() => {
   const frame = document.getElementById("frame");
   const root = document.documentElement;
+  const landing = document.getElementById("landing");
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
   const W = 1920,
     H = 1080;
@@ -40,7 +41,7 @@
     }
   }
   function layout() {
-    maxScroll = Math.max(1, root.scrollHeight - innerHeight);
+    maxScroll = Math.max(1, landing.offsetHeight - innerHeight);
     // Keep all three objects visible on portrait screens; only zoom into the TV
     // at the end, rather than cropping the cassette away at the start.
     coverScale = Math.max(innerWidth / W, innerHeight / H);

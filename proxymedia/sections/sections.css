@@ -1,0 +1,615 @@
+/* Sections after the landing sequence: the whiteboard, then the mailbox. */
+@font-face {
+  font-family: "Gochi Hand";
+  src: url("media/gochi-hand.woff2") format("woff2");
+  font-display: block;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.scene {
+  position: relative;
+  background: #e2dbd2 url("media/plaster.webp") center / cover;
+}
+.scene-view {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: url("media/plaster.webp") center / cover;
+}
+/* Warm room light falling across the plaster. */
+.scene-view::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 60% at 30% 18%, rgba(255, 244, 226, 0.35), transparent 70%),
+    linear-gradient(to bottom, rgba(60, 40, 20, 0) 55%, rgba(60, 40, 20, 0.14));
+}
+
+/* ---------- Whiteboard ---------- */
+#whiteboard {
+  height: 220vh;
+  /* The tape dangles over the end of the landing; let the wall rise softly
+     instead of with a hard seam. */
+  -webkit-mask-image: linear-gradient(transparent, #000 6vh);
+  mask-image: linear-gradient(transparent, #000 6vh);
+}
+.wb-rig {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--board-w, 900px);
+  transform: translate(-50%, -50%) translateY(calc(var(--settle, 0) * 3vh))
+    scale(calc(1 + var(--settle, 0) * 0.04));
+}
+.wb-board {
+  position: relative;
+  width: var(--board-w, 900px);
+  height: var(--board-h, 560px);
+  border-radius: 5px;
+  /* Anodised aluminium frame with a light bevel. */
+  padding: var(--frame, 14px);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 40%),
+    linear-gradient(to bottom, #d9dbdc, #a9adb0 48%, #c3c6c8 52%, #8f9497);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 1px 2px rgba(40, 30, 20, 0.35),
+    6px 22px 34px -10px rgba(55, 38, 20, 0.42),
+    18px 40px 70px -20px rgba(55, 38, 20, 0.3);
+}
+.wb-board canvas {
+  position: absolute;
+  left: var(--frame, 14px);
+  top: var(--frame, 14px);
+  width: calc(100% - 2 * var(--frame, 14px));
+  height: calc(100% - 2 * var(--frame, 14px));
+  border-radius: 2px;
+}
+.wb-surface {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18), inset 0 2px 5px rgba(0, 0, 0, 0.12);
+}
+.wb-writing,
+.wb-ink {
+  mix-blend-mode: multiply;
+}
+.wb-ink {
+  cursor: crosshair;
+  touch-action: pan-y pinch-zoom;
+}
+.wb-board[data-drawing="true"] .wb-ink {
+  touch-action: none;
+}
+/* Marker tray along the bottom rail. */
+.wb-tray {
+  position: relative;
+  height: calc(var(--frame, 14px) * 1.8);
+  margin: -2px 4% 0;
+  border-radius: 0 0 6px 6px;
+  background: linear-gradient(to bottom, #8d9295, #cfd2d4 30%, #a3a7aa 70%, #6f7477);
+  box-shadow: 0 10px 14px -6px rgba(55, 38, 20, 0.45);
+  display: flex;
+  align-items: flex-end;
+  gap: calc(var(--frame, 14px) * 0.6);
+  padding: 0 6%;
+}
+.wb-marker {
+  --len: calc(var(--frame, 14px) * 9);
+  position: relative;
+  width: var(--len);
+  height: calc(var(--frame, 14px) * 1.05);
+  margin-bottom: calc(var(--frame, 14px) * 0.55);
+  border-radius: 3px 40% 40% 3px / 3px 50% 50% 3px;
+  background: linear-gradient(to bottom, #fafafa, #d6d6d4 55%, #a9a9a6);
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.wb-marker::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: -1px;
+  bottom: -1px;
+  width: 30%;
+  border-radius: 3px;
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, 0.3)),
+    var(--cap);
+}
+.wb-marker::after {
+  content: "";
+  position: absolute;
+  left: 38%;
+  top: 30%;
+  width: 30%;
+  height: 40%;
+  border-radius: 2px;
+  background: var(--cap);
+  opacity: 0.75;
+}
+.wb-marker:nth-child(2) {
+  transform: rotate(-4deg) translateX(8%);
+}
+.wb-marker:nth-child(3) {
+  transform: rotate(2deg);
+}
+.wb-board[data-drawing="true"] + .wb-tray .wb-marker.is-up {
+  transform: translateY(-40%) rotate(-8deg);
+}
+.wb-eraser {
+  all: unset;
+  cursor: pointer;
+  position: relative;
+  margin-left: auto;
+  width: calc(var(--frame, 14px) * 9.5);
+  height: calc(var(--frame, 14px) * 2.6);
+  margin-bottom: calc(var(--frame, 14px) * 0.35);
+  border-radius: 6px 6px 3px 3px;
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 40%),
+    linear-gradient(to bottom, #2b2b2e 0 62%, #5a554f 62% 100%);
+  box-shadow: 0 3px 4px rgba(0, 0, 0, 0.35);
+  transition: transform 0.25s ease;
+}
+.wb-eraser::after {
+  /* Felt worn grey by old ink. */
+  content: "";
+  position: absolute;
+  left: 3%;
+  right: 3%;
+  bottom: 0;
+  height: 38%;
+  border-radius: 0 0 3px 3px;
+  background: repeating-linear-gradient(90deg, #6b6660 0 2px, #5e5953 2px 4px);
+  opacity: 0.85;
+}
+.wb-eraser:hover,
+.wb-eraser:focus-visible {
+  transform: translateY(-18%) rotate(-3deg);
+}
+.wb-eraser:focus-visible {
+  outline: 2px solid #1f4fb5;
+  outline-offset: 3px;
+}
+
+/* ---------- Mailbox ---------- */
+#mailbox {
+  height: 360vh;
+}
+.mb-camera {
+  position: absolute;
+  inset: 0;
+  perspective: 1700px;
+  transform-style: preserve-3d;
+}
+.paper-out .mb-camera {
+  transform-style: flat;
+}
+.mb-rig,
+.mb-form {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  transform-style: preserve-3d;
+}
+.mb-rig {
+  width: 980px;
+  height: 600px;
+}
+.mb-rig div,
+.mb-rig i {
+  position: absolute;
+  display: block;
+  transform-style: preserve-3d;
+}
+.mb-rig * {
+  backface-visibility: hidden;
+}
+/* Brushed, ribbed aluminium, lit from the upper left; years of handling
+   leave the lower edges a little dull. */
+.mb-front,
+.mb-door,
+.mb-face {
+  --rib: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.5) 0 1px,
+    rgba(255, 255, 255, 0) 1px 2px,
+    rgba(0, 0, 0, 0.14) 2px 3px,
+    rgba(0, 0, 0, 0) 3px 4px
+  );
+  --metal: linear-gradient(160deg, #d3d6d8, #b7bbbe 45%, #a2a6a9 80%, #8e9295);
+  --grime: radial-gradient(ellipse 120% 40% at 50% 105%, rgba(70, 60, 45, 0.18), transparent 70%);
+}
+.mb-shadow {
+  left: 30px;
+  top: 40px;
+  width: 980px;
+  height: 600px;
+  background: rgba(50, 34, 18, 0.55);
+  filter: blur(26px);
+  transform: translateZ(-211px);
+  border-radius: 12px;
+}
+.mb-face {
+  background: var(--grime), var(--metal);
+}
+.mb-side {
+  top: 0;
+  width: 190px;
+  height: 600px;
+  transform-origin: 0 0;
+  background:
+    var(--grime),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.25) 0 1px, rgba(0, 0, 0, 0.06) 1px 3px),
+    linear-gradient(to right, #b4b8bb, #8d9194);
+}
+.mb-left {
+  left: 0;
+  transform: translateZ(-20px) rotateY(90deg);
+}
+.mb-right {
+  left: 980px;
+  transform: translateZ(-20px) rotateY(90deg);
+  filter: brightness(0.7);
+}
+.mb-cap {
+  left: 0;
+  width: 980px;
+  height: 190px;
+  transform-origin: 0 0;
+}
+.mb-top {
+  top: 0;
+  transform: translateZ(-20px) rotateX(-90deg);
+  background: linear-gradient(to bottom, #e6e8e9, #c9ccce);
+}
+.mb-bottom {
+  top: 600px;
+  transform: translateZ(-20px) rotateX(-90deg);
+  background: #6d7174;
+}
+.mb-front {
+  inset: 0;
+  transform: translateZ(-20px);
+  /* The frame is the front's own background; the opening is cut out with a
+     mask so the open cubby shows through. */
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0) 35%),
+    var(--grime),
+    var(--metal);
+  -webkit-mask:
+    linear-gradient(#000 0 0) 0 0 / 100% 100% no-repeat,
+    linear-gradient(#000 0 0) 401px 62px / 178px 490px no-repeat;
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) 0 0 / 100% 100% no-repeat exclude,
+    linear-gradient(#000 0 0) 401px 62px / 178px 490px no-repeat;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+/* Bevelled frame rails around the doors. */
+.mb-bezel {
+  left: 22px;
+  top: 26px;
+  right: 22px;
+  bottom: 26px;
+  border: 16px solid transparent;
+  border-image: linear-gradient(160deg, #eef0f1, #a5a9ac 55%, #7f8386) 1;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.35);
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.2) 0 1px, rgba(0, 0, 0, 0.05) 1px 3px) border-box;
+  -webkit-mask:
+    linear-gradient(#000 0 0) padding-box exclude,
+    linear-gradient(#000 0 0) border-box;
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) padding-box exclude,
+    linear-gradient(#000 0 0) border-box;
+}
+.mb-rail {
+  left: 40px;
+  right: 40px;
+  top: 44px;
+  height: 18px;
+  background: linear-gradient(to bottom, #8a8e91, #d2d5d7 40%, #a7abae);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25);
+}
+.mb-door {
+  left: calc(41px + var(--i) * 180px);
+  top: 62px;
+  width: 178px;
+  height: 490px;
+  background: var(--grime), var(--rib), var(--metal);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.28),
+    inset 1px 1px 0 2px rgba(255, 255, 255, 0.25);
+}
+.mb-front .mb-door {
+  transform: translateZ(-1px);
+}
+.mb-slot {
+  left: 40px;
+  top: 168px;
+  width: 98px;
+  height: 22px;
+  border-radius: 1px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.25));
+  box-shadow:
+    inset 0 1px 1px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.mb-lock {
+  left: 18px;
+  top: 222px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg, transparent 46%, #2a2a2a 46% 54%, transparent 54%) center / 40% 60% no-repeat,
+    radial-gradient(circle at 38% 32%, #ffffff, #c9cdd0 35%, #6c7073 75%, #3b3e40);
+  box-shadow:
+    0 3px 3px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.4);
+}
+.mb-door-open {
+  transform-origin: 100% 50%;
+  transform: translateZ(-21px) rotateY(var(--door, 0deg));
+  background: none;
+  box-shadow: none;
+}
+.mb-door-front,
+.mb-door-back {
+  inset: 0;
+  background: var(--grime), var(--rib), var(--metal);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.28),
+    inset 1px 1px 0 2px rgba(255, 255, 255, 0.25);
+}
+/* The light changes across the door as it swings toward the window. */
+.mb-door-front::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, var(--door-light, 0));
+  mix-blend-mode: soft-light;
+}
+.mb-door-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(to right, #7c8083, #a3a7aa);
+}
+.mb-hole {
+  left: 78px;
+  top: 40px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #111;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.mb-label {
+  left: 28px;
+  top: 88px;
+  width: 122px;
+  height: 52px;
+  border-radius: 3px;
+  background: linear-gradient(160deg, #fbfbfa, #dcdcd8);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.25),
+    0 1px 1px rgba(0, 0, 0, 0.25);
+  font:
+    600 17px/1 "Helvetica Neue",
+    Arial,
+    sans-serif;
+  letter-spacing: 0.02em;
+  color: #262626;
+  text-align: center;
+}
+.mb-label b {
+  display: block;
+  padding-top: 7px;
+  font-weight: 600;
+}
+.mb-label i {
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  background: rgba(40, 40, 40, 0.45);
+}
+.mb-label i:nth-of-type(1) {
+  top: 30px;
+}
+.mb-label i:nth-of-type(2) {
+  top: 37px;
+  left: 30px;
+  right: 30px;
+}
+/* The compartment behind the open door. */
+.mb-cubby {
+  left: 401px;
+  top: 62px;
+  width: 178px;
+  height: 490px;
+  transform: translateZ(-20px);
+}
+.mb-cubby-back {
+  inset: 0;
+  transform: translateZ(-160px);
+  background: linear-gradient(to bottom, #2c2d2e, #3d3e3f);
+}
+.mb-cubby-wall {
+  top: 0;
+  width: 160px;
+  height: 490px;
+  transform-origin: 0 0;
+  background: linear-gradient(to right, #6f7376, #3a3c3e);
+}
+.mb-cubby-l {
+  left: 0;
+  transform: rotateY(90deg);
+  background: linear-gradient(to left, #5c6063, #2f3133);
+}
+.mb-cubby-r {
+  left: 178px;
+  transform: rotateY(90deg);
+}
+.mb-cubby-floor {
+  left: 0;
+  width: 178px;
+  height: 160px;
+  transform-origin: 0 0;
+}
+.mb-cubby-t {
+  top: 0;
+  transform: rotateX(-90deg);
+  background: linear-gradient(to bottom, #1d1e1f, #3b3c3d);
+}
+.mb-cubby-b {
+  top: 490px;
+  transform: rotateX(-90deg);
+  background: linear-gradient(to bottom, #8a8e91, #55585a);
+}
+.mb-cubby-l,
+.mb-cubby-r,
+.mb-cubby-t,
+.mb-cubby-b,
+.mb-cubby-back {
+  backface-visibility: visible;
+}
+
+/* As the paper comes up, the wall and the box behind it fall into shade. */
+.mb-wall-dim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, rgba(40, 28, 16, 0.45), rgba(40, 28, 16, 0.8));
+  opacity: var(--dim, 0);
+}
+.mb-front,
+.mb-face,
+.mb-door-front,
+.mb-door-back,
+.mb-cubby > div {
+  filter: brightness(calc(1 - var(--dim, 0) * 0.55));
+}
+/* The paper form. Real inputs, so it stays usable. */
+.mb-form {
+  width: 440px;
+  padding: 34px 34px 26px;
+  color: #2a2722;
+  font:
+    15px/1.3 "Courier New",
+    Courier,
+    monospace;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.5), transparent 60%),
+    linear-gradient(170deg, #f6f2e8, #ebe5d6);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.15),
+    0 18px 30px -12px rgba(40, 28, 14, 0.45);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+.mb-form::before {
+  /* Faint fold lines from being folded in thirds. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, transparent calc(33.3% - 1px), rgba(0, 0, 0, 0.05) 33.3%, rgba(255, 255, 255, 0.5) calc(33.3% + 1px), transparent calc(33.3% + 2px)),
+    linear-gradient(to bottom, transparent calc(66.6% - 1px), rgba(0, 0, 0, 0.05) 66.6%, rgba(255, 255, 255, 0.5) calc(66.6% + 1px), transparent calc(66.6% + 2px));
+}
+.mb-form[data-state="hidden"] {
+  visibility: hidden;
+}
+.mb-hp {
+  position: absolute;
+  left: -9999px;
+}
+.mb-field {
+  position: relative;
+  display: block;
+  margin-bottom: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+.mb-field span {
+  display: block;
+  margin-bottom: 4px;
+}
+.mb-field input,
+.mb-field textarea {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-bottom: 1.5px solid rgba(42, 39, 34, 0.55);
+  background: transparent;
+  color: #1c2d6b;
+  font:
+    24px/1.2 "Gochi Hand",
+    "Comic Sans MS",
+    cursive;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 2px 2px 3px;
+  border-radius: 0;
+  outline: none;
+  resize: none;
+}
+.mb-field textarea {
+  border: 1.5px solid rgba(42, 39, 34, 0.45);
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 28px,
+    rgba(42, 39, 34, 0.14) 28px 29px
+  );
+  line-height: 29px;
+  padding: 0 6px;
+}
+.mb-field input:focus,
+.mb-field textarea:focus {
+  border-color: #1c2d6b;
+  background-color: rgba(255, 255, 255, 0.35);
+}
+.mb-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.mb-actions button {
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f6f2e8;
+  background: #2a2722;
+  border: 0;
+  padding: 10px 22px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.mb-actions button:focus-visible {
+  outline: 2px solid #1c2d6b;
+  outline-offset: 3px;
+}
+.mb-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.mb-status {
+  font-size: 13px;
+}
