@@ -42,7 +42,13 @@ body,
 }
 #tv-shot {
   top: 2240px;
-  mask-image: linear-gradient(transparent, #000 15%, #000 90%, transparent);
+  /* No fade at the bottom: #tv-floor continues the wall seamlessly. */
+  mask-image: linear-gradient(transparent, #000 15%);
+}
+#tv-floor {
+  top: 3320px;
+  height: 540px;
+  mask-image: linear-gradient(#000 80%, transparent);
 }
 #vcr-closed {
   opacity: 0;

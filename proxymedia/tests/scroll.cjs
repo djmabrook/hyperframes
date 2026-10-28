@@ -39,7 +39,7 @@ const { chromium } = require("playwright");
     assert.equal(deterministic, true);
     for (const fraction of [0, 0.24, 0.385, 0.46, 0.565, 0.68, 1, 0]) {
       await page.evaluate(
-        (f) => scrollTo(0, f * (document.getElementById("landing").offsetHeight - innerHeight)),
+        (f) => scrollTo(0, f * document.getElementById("mark-tv").offsetTop),
         fraction,
       );
       await page.waitForTimeout(1100);
@@ -72,6 +72,26 @@ const { chromium } = require("playwright");
       return jump;
     });
     assert.ok(maxStep < 10, `state step ${maxStep}`);
+    // Past the TV: push through the resistance, the set powers off, tape unspools;
+    // scroll back and the set powers on again with the tape reeled away.
+    const at = (id) => page.evaluate((id) => document.getElementById(id).offsetTop, id);
+    const crtState = () =>
+      page.evaluate(
+        () =>
+          document.querySelector("hyperframes-player").iframeElement.contentWindow.__proxyCRT.state,
+      );
+    await page.evaluate((y) => scrollTo(0, y), await at("mark-tv"));
+    await page.waitForTimeout(1200);
+    assert.equal(await crtState(), "on");
+    await page.evaluate((y) => scrollTo(0, y), await at("mark-unspool-end"));
+    await page.waitForTimeout(2500);
+    assert.notEqual(await crtState(), "on");
+    assert.ok((await page.evaluate(() => window.__proxyTape.feed)) > 0.99, "tape unspooled");
+    await page.screenshot({ path: `work/qa/${viewport.width}-unspooled.png` });
+    await page.evaluate((y) => scrollTo(0, y), await at("mark-tv"));
+    await page.waitForTimeout(2500);
+    assert.equal(await crtState(), "on");
+    assert.equal(await page.evaluate(() => window.__proxyTape.feed), 0);
     results.push({ viewport, model: info.model, maxStateStep: maxStep, forwardReverse: "pass" });
     await page.close();
   }
@@ -81,7 +101,7 @@ const { chromium } = require("playwright");
   });
   await reduced.goto(process.env.PROXY_URL || "http://127.0.0.1:4174");
   await reduced.waitForFunction(() => document.querySelector("#frame.ready"));
-  await reduced.evaluate(() => scrollTo(0, document.getElementById("landing").offsetHeight - innerHeight));
+  await reduced.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
   await reduced.waitForTimeout(150);
   assert.equal(await reduced.evaluate(() => document.body.dataset.sequenceComplete), "true");
   assert.deepEqual(errors, []);

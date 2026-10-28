@@ -1,8 +1,21 @@
-/* Scroll is the only clock. The seekable Hyperframes timeline owns all poses. */
+/* Scroll is the only clock. The seekable Hyperframes timeline owns all poses.
+
+   The landing's scroll length is split by markers in index.html:
+     0 .. #mark-tv            the 14 s camera move, ending on the TV (power on)
+     #mark-tv .. #mark-strain  hold: the program plays
+     #mark-strain .. #mark-off resistance: the wheel is damped, the set strains
+                               toward you; push through and it powers off
+     #mark-off .. #mark-unspool-end  VHS tape unspools from above (tape/)
+                               while the camera holds on the TV
+     #mark-unspool-end .. #mark-pull-end  once the tape has fallen past the
+                               TV, the camera pulls back and the TV rises
+*/
 (() => {
   const frame = document.getElementById("frame");
-  const root = document.documentElement;
+  const stage = document.getElementById("stage");
   const landing = document.getElementById("landing");
+  const marks = {};
+  const root = document.documentElement;
   const motion = matchMedia("(prefers-reduced-motion: reduce)");
   const W = 1920,
     H = 1080;
@@ -12,7 +25,22 @@
     shown = -1,
     last = 0,
     ready = false;
+  // How far the set leans in at the end of the resistance zone. Phones keep it
+  // small so the whole-TV framing never loses its wall margin.
+  const STRAIN = { wide: 0.035, tv: 0.012 };
+  const OFF_HYSTERESIS = 24; // px of scroll between power-off and power back on
+  // After power-off the camera pulls back out of the punch (the timeline runs
+  // back to PULL_TO, the TV at its pre-punch size) and lowers itself DRIFT
+  // composition px (the wall below the TV continues in #tv-floor), so the TV
+  // rises up the screen toward the wall that follows.
+  const PULL_TO = 10.8;
+  const DRIFT = 230;
   let maxScroll = 1,
+    strain = 0,
+    strainShown = -1,
+    pull = 0,
+    pullShown = -1,
+    tvOff = false,
     baseScale = 1,
     coverScale = 1,
     endScale = 1;
@@ -41,7 +69,12 @@
     }
   }
   function layout() {
-    maxScroll = Math.max(1, landing.offsetHeight - innerHeight);
+    for (const id of ["tv", "strain", "off", "unspool-end", "pull-end"]) {
+      const el = document.getElementById(`mark-${id}`);
+      marks[id] = el.getBoundingClientRect().top + scrollY;
+    }
+    // The camera move spans the scroll up to the punch-in marker.
+    maxScroll = Math.max(1, marks.tv);
     // Keep all three objects visible on portrait screens; only zoom into the TV
     // at the end, rather than cropping the cassette away at the start.
     coverScale = Math.max(innerWidth / W, innerHeight / H);
@@ -62,6 +95,28 @@
     wake();
   }
   const fraction = () => Math.max(0, Math.min(1, scrollY / maxScroll));
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+  // Resistance: the lean grows fast at first, then barely gives (a rubber band).
+  // At the power-off marker it lets go and springs back.
+  function strainTarget() {
+    if (scrollY >= marks.off) return 0;
+    const r = clamp01((scrollY - marks.strain) / (marks.off - marks.strain));
+    return (sceneEnd === TV_END ? STRAIN.tv : STRAIN.wide) * (1 - Math.pow(1 - r, 2.4));
+  }
+  function pullTarget() {
+    const u = clamp01(
+      (scrollY - marks["unspool-end"]) / (marks["pull-end"] - marks["unspool-end"]),
+    );
+    return u * u * (3 - 2 * u);
+  }
+  // Frame scale for a timeline time, before strain.
+  function scaleAt(time) {
+    const punch = clamp01((time / player.duration - 0.76) / 0.2);
+    return baseScale + (endScale - baseScale) * punch * punch * (3 - 2 * punch);
+  }
+  function inStrainZone() {
+    return scrollY >= marks.strain - 1 && scrollY < marks.off;
+  }
   function wake() {
     if (!raf) {
       last = performance.now();
@@ -78,7 +133,8 @@
       wake();
       return;
     }
-    const target = fraction() * player.duration;
+    const pTarget = pullTarget();
+    const target = fraction() * player.duration - pTarget * (player.duration - PULL_TO);
     if (!ready) {
       player.pause();
       current = target;
@@ -93,15 +149,34 @@
         ? target
         : current + (target - current) * -Math.expm1(-dt / 0.11);
     if (Math.abs(target - current) < 0.0001) current = target;
+    const sTarget = strainTarget();
+    strain =
+      motion.matches || elapsed > 0.25
+        ? sTarget
+        : strain + (sTarget - strain) * -Math.expm1(-dt / (sTarget < strain ? 0.07 : 0.12));
+    if (Math.abs(sTarget - strain) < 0.00002) strain = sTarget;
+    pull =
+      motion.matches || elapsed > 0.25
+        ? pTarget
+        : pull + (pTarget - pull) * -Math.expm1(-dt / 0.11);
+    if (Math.abs(pTarget - pull) < 0.00002) pull = pTarget;
     const scene = player.iframeElement.contentWindow.__proxyScene;
     if (scene.end.scale !== sceneEnd.scale) {
       scene.setEnd(sceneEnd.scale, sceneEnd.aimY);
       shown = -1;
     }
-    if (Math.abs(current - shown) > 0.00001) {
-      player.seek(current);
-      const punch = Math.max(0, Math.min(1, (current / player.duration - 0.76) / 0.2));
-      const scale = baseScale + (endScale - baseScale) * punch * punch * (3 - 2 * punch);
+    // Past the marker the set is off; a little above it, on again.
+    if (scrollY >= marks.off) tvOff = true;
+    else if (scrollY < marks.off - OFF_HYSTERESIS) tvOff = false;
+    if (Math.abs(current - shown) > 0.00001 || strain !== strainShown || pull !== pullShown) {
+      if (pull !== pullShown) {
+        scene.setDrift(pull * DRIFT);
+        scene.renderAt(current);
+      }
+      if (Math.abs(current - shown) > 0.00001) player.seek(current);
+      const scale = scaleAt(current) * (1 + strain);
+      strainShown = strain;
+      pullShown = pull;
       frame.style.width = `${W * scale}px`;
       frame.style.height = `${H * scale}px`;
       frame.classList.toggle("letterbox", H * scale < innerHeight - 1);
@@ -116,14 +191,77 @@
       // The set powers on when the punch lands, and off again when scrolling
       // back out. The CRT runs on its own clock; scroll only switches it.
       const crt = player.iframeElement.contentWindow.__proxyCRT;
-      if (crt) {
-        crt.setViewScale(scale * devicePixelRatio);
-        if (current >= 13.7) crt.powerOn();
-        else if (current < 13.55) crt.powerOff();
-      }
+      if (crt) crt.setViewScale(scale * devicePixelRatio);
     }
-    if (current !== target) raf = requestAnimationFrame(tick);
+    const crt = player.iframeElement.contentWindow.__proxyCRT;
+    if (crt) {
+      if (current >= 13.7 && !tvOff) crt.powerOn();
+      else if (current < 13.55 || tvOff) crt.powerOff();
+    }
+    publishStage();
+    if (current !== target || strain !== sTarget || pull !== pTarget)
+      raf = requestAnimationFrame(tick);
   }
+  // Hand the tape (tape/tape-ribbons.js) where the TV photograph is on screen
+  // and how far the tape has unspooled. k is CSS px per #tv-shot px; ox/oy is
+  // where #tv-shot's origin sits, relative to the stage, so the framing holds
+  // as the stage scrolls away and the tape stays hanging over what follows.
+  function publishStage() {
+    const scene = player.iframeElement.contentWindow.__proxyScene;
+    const st = scene.state;
+    const f = frame.getBoundingClientRect();
+    const g = stage.getBoundingClientRect();
+    const sx = f.width / W,
+      sy = f.height / H;
+    const feed = clamp01((scrollY - marks.off) / (marks["unspool-end"] - marks.off));
+    // The same mapping at the punch-in (near) and once the pull-back is
+    // complete (far), so the tape can be hung across the TV and sized for the
+    // widest view it will be seen in, whatever the camera is doing right now.
+    const mapAt = (time, drift) => {
+      const sc = scaleAt(time),
+        stt = scene.stateAt(time, drift);
+      const l = (g.width - W * sc) / 2,
+        t = (g.height - H * sc) / 2;
+      return { k: stt.scale * sc, ox: l + stt.tx * sc, oy: t + (stt.scale * 2240 + stt.ty) * sc };
+    };
+    const next = {
+      k: st.scale * sx,
+      ox: f.left - g.left + st.tx * sx,
+      oy: f.top - g.top + (st.scale * 2240 + st.ty) * sy,
+      near: mapAt(player.duration, 0),
+      far: mapAt(PULL_TO, DRIFT),
+      width: g.width,
+      height: g.height,
+      feed,
+      // Live once the camera has landed on the TV, and until the wall after
+      // the landing (#notes, where the tape dangles past the writing) or,
+      // without it, the landing itself has scrolled out of view.
+      active:
+        scrollY >= maxScroll - 2 &&
+        (document.getElementById("notes") || landing).getBoundingClientRect().bottom > 0,
+    };
+    const prev = window.__proxyStage;
+    if (
+      prev &&
+      ["k", "ox", "oy", "width", "height", "feed", "active"].every((key) => prev[key] === next[key])
+    )
+      return;
+    window.__proxyStage = next;
+    dispatchEvent(new CustomEvent("proxy-stage", { detail: next }));
+  }
+  // The wheel is heavier in the resistance zone: forward wheel input moves the
+  // page at 40%. Touch, keys and the scrollbar are left alone (the scroll-snap
+  // catch at #mark-tv plays that role on phones).
+  addEventListener(
+    "wheel",
+    (e) => {
+      if (!e.cancelable || e.ctrlKey || e.deltaY <= 0 || !inStrainZone() || motion.matches) return;
+      e.preventDefault();
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
+      scrollBy(0, Math.max(1, e.deltaY * unit * 0.4));
+    },
+    { passive: false },
+  );
   customElements.whenDefined("hyperframes-player").then(() => {
     player = document.createElement("hyperframes-player");
     player.setAttribute(

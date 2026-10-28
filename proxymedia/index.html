@@ -18,22 +18,70 @@
       html {
         background: var(--wall);
       }
+      html {
+        /* One soft catch where the punch lands, so a scroll that ends near the
+           TV settles on it and the program can play. Pushing on carries past. */
+        scroll-snap-type: y proximity;
+      }
       body {
         background: var(--wall);
       }
-      /* The landing's scroll length drives the sequence; the sections after it
-         (sections/) scroll in below once the stage lets go. */
+      /* The landing's scroll length drives the sequence; the stage stays pinned
+         while it scrolls. Markers (below) split it into the 14 s camera move,
+         the hold on the TV, the resistance before power-off, the unspool, and
+         the pull-back once the tape has fallen past the TV. */
       #landing {
         position: relative;
-        height: 900vh;
+        height: 1360vh;
+      }
+      .mark {
+        position: absolute;
+        left: 0;
+        width: 1px;
+        height: 1px;
+        pointer-events: none;
+      }
+      #mark-tv {
+        top: 800vh;
+        scroll-snap-align: start;
+      }
+      #mark-strain {
+        top: 850vh;
+      }
+      #mark-off {
+        top: 920vh;
+      }
+      #mark-unspool-end {
+        top: 1120vh;
+      }
+      #mark-pull-end {
+        top: 1260vh;
       }
       #stage {
         position: sticky;
         top: 0;
         height: 100vh;
-        height: 100dvh;
+        height: 100svh;
         overflow: hidden;
         background: var(--wall);
+      }
+      /* The tape hangs in its own fixed layer, above the stage and whatever
+         scrolls in after the landing (it dangles over the next wall), under
+         the vignette and grain. tape-ribbons.js scrolls it away when that
+         section leaves. */
+      #tape {
+        position: fixed;
+        z-index: 40;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100svh;
+        pointer-events: none;
+        visibility: hidden;
+      }
+      #tape.live {
+        visibility: visible;
       }
       #frame {
         position: absolute;
@@ -117,6 +165,11 @@
   </head>
   <body>
     <div id="landing">
+      <div class="mark" id="mark-tv"></div>
+      <div class="mark" id="mark-strain"></div>
+      <div class="mark" id="mark-off"></div>
+      <div class="mark" id="mark-unspool-end"></div>
+      <div class="mark" id="mark-pull-end"></div>
       <div id="stage" aria-hidden="true">
         <div id="frame">
           <img id="poster" src="media/poster.webp" alt="" />
@@ -192,10 +245,12 @@
         </form>
       </div>
     </section>
+    <canvas id="tape" aria-hidden="true"></canvas>
     <div id="vignette" aria-hidden="true"></div>
     <div id="grain" aria-hidden="true"></div>
     <script src="vendor/hyperframes-player-0.8.198.js" defer></script>
     <script src="scroll.js" defer></script>
+    <script type="module" src="tape/tape-ribbons.js"></script>
     <script src="sections/notes.js" defer></script>
     <script src="sections/mailbox.js" defer></script>
   </body>
