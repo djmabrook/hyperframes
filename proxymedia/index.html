@@ -27,10 +27,11 @@
       }
       /* The landing's scroll length drives the sequence; the stage stays pinned
          while it scrolls. Markers (below) split it into the 14 s camera move,
-         the hold on the TV, the resistance before power-off, and the unspool. */
+         the hold on the TV, the resistance before power-off, the unspool, and
+         the pull-back once the tape has fallen past the TV. */
       #landing {
         position: relative;
-        height: 1240vh;
+        height: 1360vh;
       }
       .mark {
         position: absolute;
@@ -51,6 +52,9 @@
       }
       #mark-unspool-end {
         top: 1120vh;
+      }
+      #mark-pull-end {
+        top: 1260vh;
       }
       #stage {
         position: sticky;
@@ -160,6 +164,7 @@
       <div class="mark" id="mark-strain"></div>
       <div class="mark" id="mark-off"></div>
       <div class="mark" id="mark-unspool-end"></div>
+      <div class="mark" id="mark-pull-end"></div>
       <div id="stage" aria-hidden="true">
         <div id="frame">
           <img id="poster" src="media/poster.webp" alt="" />

@@ -4,14 +4,15 @@ After the TV powers off, VHS tape unspools from above the frame and hangs in fro
 
 ## Scroll layout (`index.html`, `scroll.js`)
 
-`#landing` is 1240vh tall and `#stage` is sticky inside it. Invisible markers split the scroll:
+`#landing` is 1360vh tall and `#stage` is sticky inside it. Invisible markers split the scroll:
 
 | marker | at | what happens |
 | --- | --- | --- |
 | `#mark-tv` | 800vh | the 14 s camera move ends and the set powers on. This is also the scroll-snap point, so a scroll that stops near the TV settles on it. |
 | `#mark-strain` | 850vh | resistance begins. Forward wheel input moves the page at 40%, and the set leans toward you (3.5% on wide screens, 1.2% on phones so the whole-TV framing keeps its wall margin). |
 | `#mark-off` | 920vh | the lean lets go and the set powers off: the picture collapses to a line, then a dot, and the dot fades. Scrolling back 24 px above it powers the set on again. |
-| `#mark-unspool-end` | 1120vh | the tape is fully unspooled. The landing ends 100vh later. |
+| `#mark-unspool-end` | 1120vh | the tape is fully unspooled and has fallen past the TV. The camera has held on the TV until now. |
+| `#mark-pull-end` | 1260vh | the camera has pulled back out of the punch (the timeline runs back to 10.8 s, so the TV is at its pre-punch size) and lowered 230 composition px (`scene.setDrift`), so the TV has risen up the screen. `#tv-floor` continues the plaster below the TV. The landing ends 100vh later, and the tape keeps hanging over the next section (`#notes`) until that section scrolls away. |
 
 `scroll.js` publishes the framing to the tape as `window.__proxyStage` plus a `proxy-stage` event: `k` (CSS px per TV-photo px), `ox`/`oy` (where the photo's origin sits in the stage), `feed` (0..1) and `active`.
 

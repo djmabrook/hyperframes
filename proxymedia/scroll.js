@@ -6,6 +6,9 @@
      #mark-strain .. #mark-off resistance: the wheel is damped, the set strains
                                toward you; push through and it powers off
      #mark-off .. #mark-unspool-end  VHS tape unspools from above (tape/)
+                               while the camera holds on the TV
+     #mark-unspool-end .. #mark-pull-end  once the tape has fallen past the
+                               TV, the camera pulls back and the TV rises
 */
 (() => {
   const frame = document.getElementById("frame");
@@ -66,7 +69,7 @@
     }
   }
   function layout() {
-    for (const id of ["tv", "strain", "off", "unspool-end"]) {
+    for (const id of ["tv", "strain", "off", "unspool-end", "pull-end"]) {
       const el = document.getElementById(`mark-${id}`);
       marks[id] = el.getBoundingClientRect().top + scrollY;
     }
@@ -101,7 +104,9 @@
     return (sceneEnd === TV_END ? STRAIN.tv : STRAIN.wide) * (1 - Math.pow(1 - r, 2.4));
   }
   function pullTarget() {
-    const u = clamp01((scrollY - marks.off) / ((marks["unspool-end"] - marks.off) * 0.75));
+    const u = clamp01(
+      (scrollY - marks["unspool-end"]) / (marks["pull-end"] - marks["unspool-end"]),
+    );
     return u * u * (3 - 2 * u);
   }
   // Frame scale for a timeline time, before strain.
