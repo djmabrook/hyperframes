@@ -10,6 +10,9 @@
   // bezel. Hosts whose frame is shorter than the screen (portrait phones) ask
   // for the whole TV instead via setEnd(), so no edge of the set is cut off.
   const end = { scale: 2.7, aimY: 496 };
+  // After the TV powers off, the host pulls the camera back and lowers it by
+  // this many composition px (setDrift), so the TV rises up the screen.
+  let drift = 0;
   // Measured in the VCR photograph's 1920×1080 coordinate space. Keep the
   // cassette's entering cross-section inside the dark aperture, not its bezel.
   const SLOT = {
@@ -32,7 +35,7 @@
     return u * u * u * (u * (u * 6 - 15) + 10);
   };
   const mix = (a, b, u) => a + (b - a) * u;
-  function stateAt(t) {
+  function stateAt(t, d = drift) {
     t = Math.max(0, Math.min(DURATION, t));
     const approach = smooth(t, 0.7, 5.1);
     const insert = smooth(t, 5.55, 7.35);
@@ -48,7 +51,7 @@
     // reads as a tube rather than a flat fill.
     const scale = Math.exp(Math.log(end.scale) * punch);
     const cameraY = VCR_Y * approach + (TV_Y - VCR_Y) * tilt;
-    const aimY = mix(H / 2, end.aimY, punch);
+    const aimY = mix(H / 2, end.aimY, punch) + d;
     return {
       time: t,
       cameraY,
@@ -101,6 +104,9 @@
     setEnd(scale, aimY) {
       end.scale = scale;
       end.aimY = aimY;
+    },
+    setDrift(px) {
+      drift = px;
     },
     geometry: { lengthRatio: 103 / 187, thicknessRatio: 25 / 187 },
   };

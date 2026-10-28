@@ -25,8 +25,8 @@ const canvas = document.getElementById("tape");
 const small = matchMedia("(pointer: coarse)").matches || Math.min(innerWidth, innerHeight) < 640;
 // Phones get fewer, coarser streams, fewer solver passes and a smaller shadow map.
 const Q = small
-  ? { streams: 4, maxN: 64, iters: 7, shadow: 1024, dpr: 1.5, sub: 2 }
-  : { streams: 6, maxN: 110, iters: 10, shadow: 2048, dpr: 2, sub: 3 };
+  ? { streams: 4, maxN: 80, iters: 7, shadow: 1024, dpr: 1.5, sub: 2, perView: 55 }
+  : { streams: 6, maxN: 140, iters: 10, shadow: 2048, dpr: 2, sub: 3, perView: 70 };
 
 const TAPE_WIDTH = 22; // 12.7 mm on this 13" Trinitron (glass ≈ 26 cm = 508 px)
 const GRAVITY = 650; // px/s². Real g at this scale is ~19000, but tape this light is mostly carried by its own springiness and the air.
@@ -170,23 +170,30 @@ function viewOf(s) {
   return { left: -s.ox / s.k, top: -s.oy / s.k, w: s.width / s.k, h: s.height / s.k };
 }
 
-function build(view) {
+// near: the punched-in view where the tape starts falling; far: the view after
+// the camera has pulled back. Strands are spread over the near view (so they
+// fall across the TV), hang from above both, and are long enough to dangle
+// through the far one.
+function build(near, far) {
+  const view = far;
   const rand = rng(1979);
-  const seg = Math.max(7, Math.min(26, view.h / 55));
+  const seg = Math.max(7, Math.min(32, view.h / Q.perView));
+  const anchorY = Math.min(near.top, far.top) - 30;
+  const drop = far.top + far.h - anchorY;
   const radius = Math.max(TAPE_WIDTH * 0.42, seg * 0.5);
   const streams = [];
   let total = 0;
   for (let i = 0; i < Q.streams; i++) {
     const u = (i + 0.5) / Q.streams;
-    const length = view.h * (1.15 + rand() * 0.6);
+    const length = drop * (1.05 + rand() * 0.5);
     const n = Math.min(Q.maxN, Math.ceil(length / seg) + 1);
     const s = {
       offset: total,
       n,
       seg: length / (n - 1),
       anchor: [
-        view.left + view.w * (0.1 + 0.8 * u) + (rand() - 0.5) * view.w * 0.08,
-        view.top - 30,
+        near.left + near.w * (0.1 + 0.8 * u) + (rand() - 0.5) * near.w * 0.08,
+        anchorY,
         24 + rand() * 120,
       ],
       // Unspools a little after the stream before it, so the tape arrives in strands.
@@ -798,11 +805,11 @@ function onStage(s) {
   stage = s;
   if (!renderer || !s) return;
   if (!s.active && !built) return;
-  const v = viewOf(s);
-  if (!built || Math.abs(v.h - built.view.h) / built.view.h > 0.15) {
+  const far = viewOf({ ...s, ...(s.far || {}) });
+  if (!built || Math.abs(far.h - built.view.h) / built.view.h > 0.15) {
     // A different framing (rotation, a phone toolbar is not enough) gets its own
     // tape at the right scale; it starts from wherever the scroll has fed to.
-    built = build(v);
+    built = build(viewOf({ ...s, ...(s.near || {}) }), far);
   }
   frameCamera();
   wake();
