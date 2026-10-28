@@ -9,9 +9,9 @@
     PH = 2160;
   // Centres of the three groups of writing on the plate.
   const GROUPS = [
-    [700, 620],
-    [2440, 1180],
-    [940, 1720],
+    [1310, 850],
+    [2180, 1150],
+    [1430, 1400],
   ];
 
   const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));

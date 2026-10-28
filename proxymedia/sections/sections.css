@@ -57,6 +57,9 @@
 }
 .nt-line {
   position: absolute;
+  /* Each line is the ink alone (photo divided by the blank wall), multiplied
+     onto the wall so it takes on the plaster wherever it sits. */
+  mix-blend-mode: multiply;
 }
 
 /* ---------- Mailbox ---------- */
