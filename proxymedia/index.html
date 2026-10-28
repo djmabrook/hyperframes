@@ -17,17 +17,59 @@
       html {
         background: var(--wall);
       }
+      html {
+        /* One soft catch where the punch lands, so a scroll that ends near the
+           TV settles on it and the program can play. Pushing on carries past. */
+        scroll-snap-type: y proximity;
+      }
       body {
         background: var(--wall);
-        /* The scroll length drives the sequence; nothing else lives on the page yet. */
-        height: 900svh;
-        height: 900vh;
+      }
+      /* The landing's scroll length drives the sequence; the stage stays pinned
+         while it scrolls. Markers (below) split it into the 14 s camera move,
+         the hold on the TV, the resistance before power-off, and the unspool. */
+      #landing {
+        position: relative;
+        height: 1240vh;
+      }
+      .mark {
+        position: absolute;
+        left: 0;
+        width: 1px;
+        height: 1px;
+        pointer-events: none;
+      }
+      #mark-tv {
+        top: 800vh;
+        scroll-snap-align: start;
+      }
+      #mark-strain {
+        top: 850vh;
+      }
+      #mark-off {
+        top: 920vh;
+      }
+      #mark-unspool-end {
+        top: 1120vh;
       }
       #stage {
-        position: fixed;
-        inset: 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        height: 100svh;
         overflow: hidden;
         background: var(--wall);
+      }
+      #tape {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        visibility: hidden;
+      }
+      #tape.live {
+        visibility: visible;
       }
       #frame {
         position: absolute;
@@ -104,17 +146,25 @@
     </style>
   </head>
   <body>
-    <div id="stage" aria-hidden="true">
-      <div id="frame">
-        <img id="poster" src="media/poster.webp" alt="" />
+    <div id="landing">
+      <div class="mark" id="mark-tv"></div>
+      <div class="mark" id="mark-strain"></div>
+      <div class="mark" id="mark-off"></div>
+      <div class="mark" id="mark-unspool-end"></div>
+      <div id="stage" aria-hidden="true">
+        <div id="frame">
+          <img id="poster" src="media/poster.webp" alt="" />
+        </div>
+        <canvas id="tape"></canvas>
+        <div id="vignette"></div>
+        <div id="grain"></div>
       </div>
-      <div id="vignette"></div>
-      <div id="grain"></div>
     </div>
     <main id="site-content" aria-label="Proxy Media">
       <!-- Future site content lives here after the screen fills the viewport. -->
     </main>
     <script src="vendor/hyperframes-player-0.8.198.js" defer></script>
     <script src="scroll.js" defer></script>
+    <script type="module" src="tape/tape-ribbons.js"></script>
   </body>
 </html>
