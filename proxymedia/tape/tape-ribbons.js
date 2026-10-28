@@ -25,10 +25,12 @@ const canvas = document.getElementById("tape");
 const small = matchMedia("(pointer: coarse)").matches || Math.min(innerWidth, innerHeight) < 640;
 // Phones get fewer, coarser streams, fewer solver passes and a smaller shadow map.
 const Q = small
-  ? { streams: 4, maxN: 80, iters: 7, shadow: 1024, dpr: 1.5, sub: 2, perView: 55 }
+  ? { streams: 4, maxN: 100, iters: 7, shadow: 1024, dpr: 1.5, sub: 2, perView: 55 }
   : { streams: 6, maxN: 140, iters: 10, shadow: 2048, dpr: 2, sub: 3, perView: 70 };
 
 const TAPE_WIDTH = 22; // 12.7 mm on this 13" Trinitron (glass ≈ 26 cm = 508 px)
+const TV_BOTTOM = 800; // the set's bottom edge in the photo (#tv-shot px)
+const STRETCH = small ? 0.29 : 0.45; // how far hanging pulls a coil toward straight (0 = rest shape, 1 = straight)
 const GRAVITY = 650; // px/s². Real g at this scale is ~19000, but tape this light is mostly carried by its own springiness and the air.
 const STEP = 1 / 60;
 const FEED_RATE = 0.7; // max unspool progress per second, so a flung scroll still reads as tape
@@ -172,64 +174,104 @@ function viewOf(s) {
 
 // near: the punched-in view where the tape starts falling; far: the view after
 // the camera has pulled back. Strands are spread over the near view (so they
-// fall across the TV), hang from above both, and are long enough to dangle
-// through the far one.
+// fall across the TV) and hang from above both. Each is cut to end a little
+// past the TV: about halfway down to the mailbox's top lip (see tipTarget).
+// Where the strands should end, in #tv-shot px: halfway between the TV's
+// bottom edge and the mailbox's top lip, as the two sit on the page once the
+// landing has scrolled away and the mailbox view pins. The mailbox plate is
+// 3840×2160, drawn at cover scale and centred in its sticky view, with the lip
+// at plate y 771 (sections/mailbox). Without the mailbox, a little past the TV.
+function tipTarget(far) {
+  const k = stage.height / far.h; // CSS px per #tv-shot px in the far view
+  const tvBottomScreen = (TV_BOTTOM - far.top) * k;
+  const mailbox = document.getElementById("mailbox");
+  const landing = document.getElementById("landing");
+  if (!mailbox || !landing) return TV_BOTTOM + 100;
+  const vw = innerWidth,
+    vh = innerHeight;
+  const plate = Math.max(vw / 3840, vh / 2160);
+  const page = (el) => el.getBoundingClientRect().top + scrollY;
+  const stageTop = page(landing) + landing.offsetHeight - vh; // where the stage lets go
+  const tvBottomPage = stageTop + tvBottomScreen;
+  const lipPage = page(mailbox) + vh / 2 - (1080 - 771) * plate;
+  const gap = lipPage - tvBottomPage;
+  if (!(gap > 0)) return TV_BOTTOM + 100;
+  return TV_BOTTOM + gap / 2 / k;
+}
+
 function build(near, far) {
   const view = far;
   const rand = rng(1979);
   const seg = Math.max(7, Math.min(32, view.h / Q.perView));
   const anchorY = Math.min(near.top, far.top) - 30;
-  const drop = far.top + far.h - anchorY;
+  const tip = tipTarget(far);
   const radius = Math.max(TAPE_WIDTH * 0.42, seg * 0.5);
   const streams = [];
   let total = 0;
   for (let i = 0; i < Q.streams; i++) {
     const u = (i + 0.5) / Q.streams;
-    const length = drop * (1.05 + rand() * 0.5);
-    const n = Math.min(Q.maxN, Math.ceil(length / seg) + 1);
-    const s = {
-      offset: total,
-      n,
-      seg: length / (n - 1),
-      anchor: [
-        near.left + near.w * (0.1 + 0.8 * u) + (rand() - 0.5) * near.w * 0.08,
-        anchorY,
-        24 + rand() * 120,
-      ],
-      // Unspools a little after the stream before it, so the tape arrives in strands.
-      delay: (i % 2 ? 0.12 : 0) + rand() * 0.25,
-      released: 0,
-    };
+    const hang = tip + (rand() - 0.5) * 60 - anchorY;
+    const anchor = [
+      near.left + near.w * (0.1 + 0.8 * u) + (rand() - 0.5) * near.w * 0.08,
+      anchorY,
+      24 + rand() * 120,
+    ];
+    // Unspools a little after the stream before it, so the tape arrives in strands.
+    const delay = (i % 2 ? 0.12 : 0) + rand() * 0.25;
     // Reel memory: a loose helix, its radius wandering along the length.
     const R = 32 + rand() * 70;
-    const pitch = s.seg * (0.18 + rand() * 0.3);
+    const pitchRatio = 0.18 + rand() * 0.3;
     const wobble = rand() * 10;
+    const phase = rand() * Math.PI * 2,
+      hand = rand() < 0.5 ? -1 : 1;
+    const tw = rand() * 10,
+      tf = 0.05 + rand() * 0.08;
+    const kinks = Array.from({ length: Q.maxN }, () => rand() < 0.04);
+    // The rest curve: integrate a wandering curvature (the reel radius) and a
+    // torsion that drifts and changes sign, so the coil reverses here and there
+    // the way real spilled tape does.
+    const restCurve = (step, n) => {
+      const curve = new Float32Array(n * 3);
+      let T = [0, 1, 0],
+        N = [1, 0, 0],
+        Bn = [0, 0, 1];
+      for (let j = 1; j < n; j++) {
+        for (let c = 0; c < 3; c++) curve[j * 3 + c] = curve[(j - 1) * 3 + c] + T[c] * step;
+        const Rj = R * (0.6 + 0.8 * (0.5 + 0.5 * Math.sin(wobble + j * 0.11)));
+        const kappa = (step / Rj) * (kinks[j] ? 0.2 : 1);
+        const tau = (step / R) * 1.1 * Math.sin(tw + j * tf);
+        // Bend about the binormal, then twist about the tangent.
+        [T, N] = rotatePair(T, N, kappa);
+        [N, Bn] = rotatePair(N, Bn, tau);
+      }
+      return curve;
+    };
+    // Cut the strand so its end settles near the tip target: how far a coil
+    // reaches per length of tape is measured on its own rest curve (end to end
+    // over a 30-particle span), loosened by how much hanging stretches it.
+    const probe = restCurve(seg, Q.maxN);
+    let reach = 0,
+      spans = 0;
+    for (let j = 0; j + 30 < Q.maxN; j += 10, spans++)
+      reach += Math.hypot(
+        probe[(j + 30) * 3] - probe[j * 3],
+        probe[(j + 30) * 3 + 1] - probe[j * 3 + 1],
+        probe[(j + 30) * 3 + 2] - probe[j * 3 + 2],
+      );
+    reach /= spans * 30 * seg;
+    const length = hang / (reach + (1 - reach) * STRETCH);
+    const n = Math.min(Q.maxN, Math.ceil(length / seg) + 1);
+    const s = { offset: total, n, seg: length / (n - 1), anchor, delay, released: 0 };
+    const pitch = s.seg * pitchRatio;
     // The tape comes off the reel already curled: the feed guide is that helix.
     s.coil = {
       R,
       pitch,
       theta: 2 * Math.asin(Math.min(1, Math.sqrt(s.seg * s.seg - pitch * pitch) / (2 * R))),
-      phase: rand() * Math.PI * 2,
-      hand: rand() < 0.5 ? -1 : 1,
+      phase,
+      hand,
     };
-    // The rest curve: integrate a wandering curvature (the reel radius) and a
-    // torsion that drifts and changes sign, so the coil reverses here and there
-    // the way real spilled tape does.
-    const curve = new Float32Array(n * 3);
-    let T = [0, 1, 0],
-      N = [1, 0, 0],
-      Bn = [0, 0, 1];
-    const tw = rand() * 10,
-      tf = 0.05 + rand() * 0.08;
-    for (let j = 1; j < n; j++) {
-      for (let c = 0; c < 3; c++) curve[j * 3 + c] = curve[(j - 1) * 3 + c] + T[c] * s.seg;
-      const Rj = R * (0.6 + 0.8 * (0.5 + 0.5 * Math.sin(wobble + j * 0.11)));
-      const kappa = (s.seg / Rj) * (rand() < 0.04 ? 0.2 : 1);
-      const tau = (s.seg / R) * 1.1 * Math.sin(tw + j * tf);
-      // Bend about the binormal, then twist about the tangent.
-      [T, N] = rotatePair(T, N, kappa);
-      [N, Bn] = rotatePair(N, Bn, tau);
-    }
+    const curve = restCurve(s.seg, n);
     // Rest offsets of each window from its own centroid.
     const windows = Math.max(0, n - WINDOW + 1);
     s.windows = windows;
@@ -282,6 +324,8 @@ function build(near, far) {
   const cells = 4096;
   return {
     view,
+    tip,
+    anchorY,
     seg,
     radius,
     streams,
@@ -772,9 +816,11 @@ function frameCamera() {
   // setPixelRatio calls setSize internally; avoid reallocating/clearing the
   // drawing buffer for every feed or strain update.
   if (renderer.getPixelRatio() !== dpr) renderer.setPixelRatio(dpr);
+  // The canvas runs a screen below the stage (index.html), so strands that hang
+  // past the stage's bottom edge stay whole as the stage scrolls up.
+  const h = s.height * 2;
   renderer.getSize(renderSize);
-  if (renderSize.x !== s.width || renderSize.y !== s.height)
-    renderer.setSize(s.width, s.height, false);
+  if (renderSize.x !== s.width || renderSize.y !== h) renderer.setSize(s.width, h, false);
   const v = viewOf(s);
   const cx = v.left + v.w / 2,
     cy = v.top + v.h / 2;
@@ -784,9 +830,9 @@ function frameCamera() {
   camera.far = dist * 4;
   camera.position.set(cx, -cy, dist);
   camera.lookAt(cx, -cy, 0);
-  camera.updateProjectionMatrix();
-  const span = Math.max(v.w, v.h) * 0.8 + 300;
-  key.target.position.set(cx, -cy, 0);
+  camera.setViewOffset(s.width, s.height, 0, 0, s.width, h);
+  const span = Math.max(v.w, v.h * 2) * 0.8 + 300;
+  key.target.position.set(cx, -cy - v.h / 2, 0);
   key.position.copy(key.target.position).addScaledVector(KEY_DIR, 3000);
   Object.assign(key.shadow.camera, {
     left: -span,
@@ -797,8 +843,8 @@ function frameCamera() {
     far: 6000,
   });
   key.shadow.camera.updateProjectionMatrix();
-  catcher.position.set(cx, -cy, 0);
-  catcher.scale.set(v.w * 3, v.h * 3, 1);
+  catcher.position.set(cx, -cy - v.h / 2, 0);
+  catcher.scale.set(v.w * 3, v.h * 4, 1);
 }
 
 function onStage(s) {
@@ -850,12 +896,12 @@ function frameLoop(now) {
   if (onScreen && idle < 1) raf = requestAnimationFrame(frameLoop);
 }
 
-// The tape layer is fixed to the viewport. It stays put while the stage
-// scrolls away (so the strands dangle over the wall that follows, #mailbox) and
-// scrolls off with that wall's bottom edge, or the landing's when it is absent.
+// The tape layer is fixed to the viewport but hangs from the TV, so it moves
+// with the stage: still while the stage is pinned, then scrolling off with it
+// (and the TV) when the landing lets go.
+const stageEl = document.getElementById("stage");
 function place() {
-  const holder = document.getElementById("mailbox") || document.getElementById("landing");
-  const off = Math.min(0, holder.getBoundingClientRect().bottom - innerHeight);
+  const off = Math.min(0, stageEl.getBoundingClientRect().top);
   canvas.style.transform = off ? `translate3d(0, ${off}px, 0)` : "";
 }
 addEventListener("scroll", place, { passive: true });
