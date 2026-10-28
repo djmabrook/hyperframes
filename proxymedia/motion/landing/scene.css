@@ -46,9 +46,11 @@ body,
   mask-image: linear-gradient(transparent, #000 15%);
 }
 #tv-floor {
-  top: 3320px;
-  height: 540px;
-  mask-image: linear-gradient(#000 80%, transparent);
+  /* Overlaps the bottom 80px of the TV photo and dissolves in over it, so
+     the plaster carries on below without a line. */
+  top: 3240px;
+  height: 620px;
+  mask-image: linear-gradient(transparent, #000 80px, #000 83%, transparent);
 }
 #vcr-closed {
   opacity: 0;
