@@ -29,10 +29,12 @@
       /* The landing's scroll length drives the sequence; the stage stays pinned
          while it scrolls. Markers (below) split it into the 14 s camera move,
          the hold on the TV, the resistance before power-off, the unspool, and
-         the pull-back once the tape has fallen past the TV. */
+         the pull-back once the tape has fallen past the TV. The last 25vh is
+         a hold on the pulled-back TV while the mailbox wall (which overlaps
+         it by that much) dissolves in over it. */
       #landing {
         position: relative;
-        height: 1360vh;
+        height: 1385vh;
       }
       .mark {
         position: absolute;
@@ -179,16 +181,20 @@
         <!-- Future site content lives here after the screen fills the viewport. -->
       </main>
     </div>
-    <section id="notes" class="scene" aria-label="Projects">
+    <section id="mailbox" class="scene" aria-label="Projects and contact">
       <div class="scene-view">
-        <div class="nt-plate" aria-hidden="true">
-          <img class="nt-wall" src="sections/media/wall-blank.webp" alt="" />
-          <img class="nt-line" src="sections/media/wall-line-0.webp" alt="" style="left: 1148px; top: 698px; width: 259px; height: 87px" />
-          <img class="nt-line" src="sections/media/wall-line-1.webp" alt="" style="left: 1171px; top: 799px; width: 292px; height: 86px" />
-          <img class="nt-line" src="sections/media/wall-line-2.webp" alt="" style="left: 1151px; top: 898px; width: 261px; height: 87px" />
-          <img class="nt-line" src="sections/media/wall-line-3.webp" alt="" style="left: 2027px; top: 1060px; width: 253px; height: 86px" />
-          <img class="nt-line" src="sections/media/wall-line-4.webp" alt="" style="left: 2046px; top: 1158px; width: 289px; height: 87px" />
-          <img class="nt-line" src="sections/media/wall-line-5.webp" alt="" style="left: 1328px; top: 1359px; width: 199px; height: 87px" />
+        <div class="mb-plate" aria-hidden="true">
+          <img class="mb-photo" src="sections/media/mailbox-open.webp" alt="" />
+          <div class="mb-door">
+            <img class="mb-door-front" src="sections/media/mailbox-door-front.webp" alt="" />
+            <img class="mb-door-back" src="sections/media/mailbox-door-back.webp" alt="" />
+          </div>
+          <img class="nt-line" src="sections/media/wall-line-0.webp" alt="" style="--x: 905px; --y: 560px; --px: 1560px; --py: 380px; width: 259px; height: 87px" />
+          <img class="nt-line" src="sections/media/wall-line-1.webp" alt="" style="--x: 928px; --y: 661px; --px: 1583px; --py: 481px; width: 292px; height: 86px" />
+          <img class="nt-line" src="sections/media/wall-line-2.webp" alt="" style="--x: 908px; --y: 760px; --px: 1563px; --py: 580px; width: 261px; height: 87px" />
+          <img class="nt-line" src="sections/media/wall-line-3.webp" alt="" style="--x: 2600px; --y: 1020px; --px: 2050px; --py: 1480px; width: 253px; height: 86px" />
+          <img class="nt-line" src="sections/media/wall-line-4.webp" alt="" style="--x: 2619px; --y: 1118px; --px: 2069px; --py: 1578px; width: 289px; height: 87px" />
+          <img class="nt-line" src="sections/media/wall-line-5.webp" alt="" style="--x: 1130px; --y: 1500px; --px: 1560px; --py: 1760px; width: 199px; height: 87px" />
         </div>
       </div>
       <div class="visually-hidden">
@@ -204,54 +210,43 @@
         <h2>Out Now</h2>
       </div>
     </section>
-    <section id="mailbox" class="scene" aria-label="Contact">
-      <div class="scene-view">
-        <div class="mb-plate" aria-hidden="true">
-          <img class="mb-photo" src="sections/media/mailbox-open.webp" alt="" />
-          <div class="mb-door">
-            <img class="mb-door-front" src="sections/media/mailbox-door-front.webp" alt="" />
-            <img class="mb-door-back" src="sections/media/mailbox-door-back.webp" alt="" />
-          </div>
-        </div>
-        <div class="mb-dim" aria-hidden="true"></div>
-        <form
-          class="mb-form"
-          name="contact"
-          method="POST"
-          action="/"
-          data-netlify="true"
-          netlify-honeypot="bot-field"
-        >
-          <input type="hidden" name="form-name" value="contact" />
-          <p class="mb-hp">
-            <label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
-          </p>
-          <label class="mb-field">
-            <span>Name</span>
-            <input name="name" type="text" autocomplete="name" required />
-          </label>
-          <label class="mb-field">
-            <span>Email</span>
-            <input name="email" type="email" autocomplete="email" required />
-          </label>
-          <label class="mb-field">
-            <span>Message</span>
-            <textarea name="message" rows="4" required></textarea>
-          </label>
-          <div class="mb-actions">
-            <button type="submit">Send</button>
-            <output class="mb-status" aria-live="polite"></output>
-          </div>
-        </form>
-      </div>
-    </section>
     <canvas id="tape" aria-hidden="true"></canvas>
+    <!-- The contact form sits above the tape layer, under the vignette and grain. -->
+    <div class="mb-dim" aria-hidden="true"></div>
+    <form
+      class="mb-form"
+      name="contact"
+      method="POST"
+      action="/"
+      data-netlify="true"
+      netlify-honeypot="bot-field"
+    >
+      <input type="hidden" name="form-name" value="contact" />
+      <p class="mb-hp">
+        <label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+      </p>
+      <label class="mb-field">
+        <span>Name</span>
+        <input name="name" type="text" autocomplete="name" required />
+      </label>
+      <label class="mb-field">
+        <span>Email</span>
+        <input name="email" type="email" autocomplete="email" required />
+      </label>
+      <label class="mb-field">
+        <span>Message</span>
+        <textarea name="message" rows="4" required></textarea>
+      </label>
+      <div class="mb-actions">
+        <button type="submit">Send</button>
+        <output class="mb-status" aria-live="polite"></output>
+      </div>
+    </form>
     <div id="vignette" aria-hidden="true"></div>
     <div id="grain" aria-hidden="true"></div>
     <script src="vendor/hyperframes-player-0.8.198.js" defer></script>
     <script src="scroll.js" defer></script>
     <script type="module" src="tape/tape-ribbons.js"></script>
-    <script src="sections/notes.js" defer></script>
     <script src="sections/mailbox.js" defer></script>
   </body>
 </html>

@@ -1,4 +1,5 @@
-/* Sections after the landing sequence: Sharpie on the wall, then the mailbox. */
+/* The wall after the landing sequence: the mailbox with the project list
+   scrawled in Sharpie around it, then the contact form. */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -30,41 +31,15 @@
     linear-gradient(to bottom, rgba(60, 40, 20, 0) 55%, rgba(60, 40, 20, 0.14));
 }
 
-/* ---------- Sharpie on the wall ---------- */
-#notes {
-  height: 260vh;
-  /* The tape dangles over the end of the landing; let the wall rise softly
-     instead of with a hard seam. */
-  -webkit-mask-image: linear-gradient(transparent, #000 6vh);
-  mask-image: linear-gradient(transparent, #000 6vh);
-}
-/* The wall photograph in its own 3840 x 2160 space, scaled (and on phones
-   panned) to the screen. The handwriting is photographed too: each line is a
-   crop of Codex's plate laid over the blank wall it was written on. */
-.nt-plate {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 3840px;
-  height: 2160px;
-  transform-origin: 0 0;
-}
-.nt-wall {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-.nt-line {
-  position: absolute;
-  /* Each line is the ink alone (photo divided by the blank wall), multiplied
-     onto the wall so it takes on the plaster wherever it sits. */
-  mix-blend-mode: multiply;
-}
-
 /* ---------- Mailbox ---------- */
 #mailbox {
-  height: 300vh;
+  height: 360vh;
+  /* One long wall: this one overlaps the end of the landing and dissolves in
+     over the plaster below the TV, so there is no line where they meet. */
+  margin-top: -25vh;
+  z-index: 1;
+  -webkit-mask-image: linear-gradient(transparent, #000 25vh);
+  mask-image: linear-gradient(transparent, #000 25vh);
 }
 #mailbox .scene-view {
   background: #e4d7c8 url("media/wall-blank.webp") center / cover;
@@ -81,6 +56,22 @@
   transform-origin: 0 0;
   perspective: 3840px;
   perspective-origin: 50% 50%;
+}
+/* The project list: each line is the ink alone (Codex's photograph divided
+   by the blank wall), multiplied onto the wall so it takes on the plaster
+   wherever it sits. Around the mailbox on wide screens; above and below it
+   on portrait phones, where the sides are cropped off. */
+.nt-line {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  mix-blend-mode: multiply;
+}
+@media (max-aspect-ratio: 1/1) {
+  .nt-line {
+    left: var(--px);
+    top: var(--py);
+  }
 }
 .mb-photo {
   position: absolute;
@@ -114,9 +105,12 @@
   transform: rotateY(180deg);
   filter: brightness(calc(0.7 + var(--door, 0) / 600));
 }
-/* As the form comes up, the wall and the mailbox behind it fall into shade. */
+/* As the form comes up, the wall, the mailbox and the tape behind it fall
+   into shade. Both sit above the tape layer (z-index 40), under the vignette
+   and grain (50). */
 .mb-dim {
-  position: absolute;
+  position: fixed;
+  z-index: 44;
   inset: 0;
   pointer-events: none;
   background: radial-gradient(ellipse at 50% 50%, rgba(40, 28, 16, 0.45), rgba(40, 28, 16, 0.8));
@@ -124,7 +118,8 @@
 }
 /* The contact form: a plain card that comes up over the shaded mailbox. */
 .mb-form {
-  position: absolute;
+  position: fixed;
+  z-index: 45;
   left: 50%;
   top: 50%;
   width: min(240px, calc(100vw - 32px));
@@ -151,7 +146,7 @@
     transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
     visibility 0s linear 0.45s;
 }
-#mailbox[data-form="open"] .mb-form {
+#mailbox[data-form="open"] ~ .mb-form {
   opacity: 1;
   visibility: visible;
   transform: translate(-50%, -50%);
@@ -160,7 +155,7 @@
     transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
     visibility 0s;
 }
-#mailbox[data-form="open"] .mb-dim {
+#mailbox[data-form="open"] ~ .mb-dim {
   opacity: 0.55;
 }
 .mb-dim {

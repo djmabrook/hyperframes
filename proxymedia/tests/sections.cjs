@@ -11,12 +11,12 @@ const URL_ = process.env.PROXY_URL || "http://127.0.0.1:4174/";
   });
   await page.goto(URL_);
   await page.waitForTimeout(800);
-  await page.evaluate(() => scrollTo(0, document.getElementById("notes").offsetTop));
+  await page.evaluate(() => scrollTo(0, document.getElementById("mailbox").offsetTop));
   await page.waitForTimeout(1500);
   assert.equal(
-    await page.evaluate(() => [...document.querySelectorAll("#notes img")].filter((i) => i.complete && i.naturalWidth).length),
-    7,
-    "the wall and its six lines of writing load",
+    await page.evaluate(() => [...document.querySelectorAll("#mailbox img")].filter((i) => i.complete && i.naturalWidth).length),
+    9,
+    "the mailbox, its door and the six lines of writing load",
   );
   const mb = await page.evaluate(() => { const s = document.getElementById("mailbox"); scrollTo(0, s.offsetTop + s.offsetHeight); return 0; });
   await page.waitForTimeout(3000);

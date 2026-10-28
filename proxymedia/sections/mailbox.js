@@ -1,12 +1,13 @@
-/* The mailbox: scrolling pushes in on the photographed mailbox and swings
-   its middle door open; then the contact form comes up in front of it.
+/* The mailbox, with the project list scrawled around it: scrolling pushes in
+   on the photographed mailbox and swings its middle door open; then the
+   contact form comes up in front of it.
    Scrolling back reverses it. A spring gives the door its weight. */
 (() => {
   const section = document.getElementById("mailbox");
   if (!section) return;
   const plate = section.querySelector(".mb-plate");
   const door = section.querySelector(".mb-door");
-  const form = section.querySelector(".mb-form");
+  const form = document.querySelector(".mb-form");
   const status = form.querySelector(".mb-status");
   const submit = form.querySelector("button[type=submit]");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
@@ -79,7 +80,7 @@
     plate.style.transform = `translate(${vw / 2 - cx * k}px, ${vh / 2 - cy * k}px) scale(${k})`;
     door.style.setProperty("--door", (S.door.x * 118).toFixed(2));
     // Once the door is open the form comes up, and the wall falls into shade.
-    const open = locked || p > 0.5;
+    const open = locked || p > 0.66;
     section.dataset.form = open ? "open" : "closed";
     form.inert = !open;
   }
@@ -91,8 +92,9 @@
     // While someone is filling the form in, hold everything open whatever the
     // page does (a phone keyboard scrolls the page when it opens).
     const p = locked ? 1 : progress();
-    S.approach.target = span(p, 0, 0.2);
-    S.door.target = span(p, 0.12, 0.42);
+    // A beat to read the wall first, then the push in and the door.
+    S.approach.target = span(p, 0.18, 0.4);
+    S.door.target = span(p, 0.3, 0.6);
     const moving = step(dt);
     render(p);
     if (moving) raf = requestAnimationFrame(tick);

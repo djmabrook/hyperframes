@@ -234,11 +234,11 @@
       height: g.height,
       feed,
       // Live once the camera has landed on the TV, and until the wall after
-      // the landing (#notes, where the tape dangles past the writing) or,
+      // the landing (#mailbox, where the tape dangles past the writing) or,
       // without it, the landing itself has scrolled out of view.
       active:
         scrollY >= maxScroll - 2 &&
-        (document.getElementById("notes") || landing).getBoundingClientRect().bottom > 0,
+        (document.getElementById("mailbox") || landing).getBoundingClientRect().bottom > 0,
     };
     const prev = window.__proxyStage;
     if (
