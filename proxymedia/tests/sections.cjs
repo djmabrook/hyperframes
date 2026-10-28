@@ -38,7 +38,7 @@ const URL_ = process.env.PROXY_URL || "http://127.0.0.1:4174/";
   await page.focus("textarea[name=message]");
   await page.evaluate(() => scrollBy(0, -600));
   await page.waitForTimeout(1500);
-  assert.equal(await page.evaluate(() => document.querySelector(".mb-form").dataset.settled), "true", "focused form holds");
+  assert.equal(await page.evaluate(() => document.getElementById("mailbox").dataset.form), "open", "focused form holds");
   await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(1500);
   await page.click(".mb-actions button");

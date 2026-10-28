@@ -165,7 +165,7 @@
 
 /* ---------- Mailbox ---------- */
 #mailbox {
-  height: 360vh;
+  height: 300vh;
 }
 /* Above and below the plate on tall screens: the plate's own wall tone. */
 #mailbox .scene-view {
@@ -220,118 +220,115 @@
   transform: rotateY(180deg);
   filter: brightness(calc(0.7 + var(--door, 0) / 600));
 }
-/* As the paper comes up, the wall and the box behind it fall into shade. */
+/* As the form comes up, the wall and the mailbox behind it fall into shade. */
 .mb-dim {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background: radial-gradient(ellipse at 50% 50%, rgba(40, 28, 16, 0.45), rgba(40, 28, 16, 0.8));
-  opacity: var(--dim, 0);
+  opacity: 0;
 }
-/* The paper form. Real inputs, so it stays usable. */
+/* The contact form: a plain card that comes up over the shaded mailbox. */
 .mb-form {
   position: absolute;
-  left: 0;
-  top: 0;
-  transform-origin: 0 0;
-  width: 440px;
-  padding: 34px 34px 26px;
-  color: #2a2722;
+  left: 50%;
+  top: 50%;
+  width: min(420px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 28px 28px 24px;
+  border-radius: 6px;
+  background: #f7f4ef;
+  color: #1b1a18;
   font:
-    15px/1.3 "Courier New",
-    Courier,
-    monospace;
-  background:
-    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.5), transparent 60%),
-    linear-gradient(170deg, #f6f2e8, #ebe5d6);
+    15px/1.4 -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   box-shadow:
-    0 1px 1px rgba(0, 0, 0, 0.15),
-    0 18px 30px -12px rgba(40, 28, 14, 0.45);
-  backface-visibility: hidden;
-  will-change: transform;
-}
-.mb-form::before {
-  /* Faint fold lines from being folded in thirds. */
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(to bottom, transparent calc(33.3% - 1px), rgba(0, 0, 0, 0.05) 33.3%, rgba(255, 255, 255, 0.5) calc(33.3% + 1px), transparent calc(33.3% + 2px)),
-    linear-gradient(to bottom, transparent calc(66.6% - 1px), rgba(0, 0, 0, 0.05) 66.6%, rgba(255, 255, 255, 0.5) calc(66.6% + 1px), transparent calc(66.6% + 2px));
-}
-.mb-form[data-state="hidden"] {
+    0 1px 2px rgba(30, 20, 10, 0.12),
+    0 24px 60px -20px rgba(30, 20, 10, 0.5);
+  opacity: 0;
   visibility: hidden;
+  transform: translate(-50%, calc(-50% + 28px)) scale(0.98);
+  transition:
+    opacity 0.35s ease,
+    transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s linear 0.45s;
+}
+#mailbox[data-form="open"] .mb-form {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%);
+  transition:
+    opacity 0.35s ease,
+    transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s;
+}
+#mailbox[data-form="open"] .mb-dim {
+  opacity: 0.55;
+}
+.mb-dim {
+  transition: opacity 0.45s ease;
 }
 .mb-hp {
   position: absolute;
   left: -9999px;
 }
 .mb-field {
-  position: relative;
   display: block;
-  margin-bottom: 18px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 12px;
+  margin-bottom: 16px;
 }
 .mb-field span {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #6b655c;
 }
 .mb-field input,
 .mb-field textarea {
   display: block;
   width: 100%;
-  border: 0;
-  border-bottom: 1.5px solid rgba(42, 39, 34, 0.55);
-  background: transparent;
-  color: #1c2d6b;
-  font:
-    26px/1.15 "Caveat Brush",
-    "Comic Sans MS",
-    cursive;
-  letter-spacing: 0;
-  text-transform: none;
-  padding: 2px 2px 3px;
-  border-radius: 0;
+  /* 16px keeps iOS from zooming in on focus. */
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.4;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #d8d1c6;
+  border-radius: 4px;
+  padding: 10px 12px;
   outline: none;
-  resize: none;
-}
-.mb-field textarea {
-  border: 1.5px solid rgba(42, 39, 34, 0.45);
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0 28px,
-    rgba(42, 39, 34, 0.14) 28px 29px
-  );
-  line-height: 29px;
-  padding: 0 6px;
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .mb-field input:focus,
 .mb-field textarea:focus {
-  border-color: #1c2d6b;
-  background-color: rgba(255, 255, 255, 0.35);
+  border-color: #1b1a18;
+  box-shadow: 0 0 0 3px rgba(27, 26, 24, 0.08);
 }
 .mb-actions {
   display: flex;
   align-items: center;
   gap: 14px;
+  margin-top: 4px;
 }
 .mb-actions button {
   font: inherit;
-  font-size: 13px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #f6f2e8;
-  background: #2a2722;
+  font-size: 15px;
+  color: #f7f4ef;
+  background: #1b1a18;
   border: 0;
+  border-radius: 4px;
   padding: 10px 22px;
   cursor: pointer;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+.mb-actions button:hover {
+  background: #36332e;
 }
 .mb-actions button:focus-visible {
-  outline: 2px solid #1c2d6b;
+  outline: 2px solid #1b1a18;
   outline-offset: 3px;
 }
 .mb-actions button:disabled {
@@ -340,4 +337,5 @@
 }
 .mb-status {
   font-size: 13px;
+  color: #6b655c;
 }
