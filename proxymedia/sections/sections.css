@@ -1,0 +1,236 @@
+/* The wall after the landing sequence: the mailbox with the project list
+   scrawled in Sharpie around it, then the contact form. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.scene {
+  position: relative;
+  background: #e2dbd2 url("media/plaster.webp") center / cover;
+}
+.scene-view {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: url("media/plaster.webp") center / cover;
+}
+/* Warm room light falling across the plaster. */
+.scene-view::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 60% at 30% 18%, rgba(255, 244, 226, 0.35), transparent 70%),
+    linear-gradient(to bottom, rgba(60, 40, 20, 0) 55%, rgba(60, 40, 20, 0.14));
+}
+
+/* ---------- Mailbox ---------- */
+#mailbox {
+  height: 360vh;
+  /* One long wall: this one overlaps the end of the landing and dissolves in
+     over the plaster below the TV, so there is no line where they meet. */
+  margin-top: -25vh;
+  z-index: 1;
+  -webkit-mask-image: linear-gradient(transparent, #000 25vh);
+  mask-image: linear-gradient(transparent, #000 25vh);
+}
+#mailbox .scene-view {
+  background: #e4d7c8 url("media/wall-blank.webp") center / cover;
+}
+/* The photographed plate (the mailbox small on the blank wall) in its own
+   3840 x 2160 space, filling the screen like the other frames. The
+   perspective matches the plate's camera, square to the wall. */
+.mb-plate {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3840px;
+  height: 2160px;
+  transform-origin: 0 0;
+  perspective: 3840px;
+  perspective-origin: 50% 50%;
+}
+/* The project list: each line is the ink alone (Codex's photograph divided
+   by the blank wall), multiplied onto the wall so it takes on the plaster
+   wherever it sits. Around the mailbox on wide screens; above and below it
+   on portrait phones, where the sides are cropped off. */
+.nt-line {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  mix-blend-mode: multiply;
+}
+@media (max-aspect-ratio: 1/1) {
+  .nt-line {
+    left: var(--px);
+    top: var(--py);
+  }
+}
+.mb-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* The middle door, hinged on its left edge. */
+.mb-door {
+  position: absolute;
+  left: 1815px;
+  top: 795px;
+  width: 213px;
+  height: 570px;
+  transform-origin: 0 50%;
+  transform: rotateY(calc(var(--door, 0) * -1deg));
+  transform-style: preserve-3d;
+}
+.mb-door img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+}
+.mb-door-front {
+  /* Turning away from the window as it opens. */
+  filter: brightness(calc(1 - var(--door, 0) / 260));
+}
+.mb-door-back {
+  transform: rotateY(180deg);
+  filter: brightness(calc(0.7 + var(--door, 0) / 600));
+}
+/* As the form comes up, the wall, the mailbox and the tape behind it fall
+   into shade. Both sit above the tape layer (z-index 40), under the vignette
+   and grain (50). */
+.mb-dim {
+  position: fixed;
+  z-index: 44;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 50%, rgba(40, 28, 16, 0.45), rgba(40, 28, 16, 0.8));
+  opacity: 0;
+}
+/* The contact form: a plain card that comes up over the shaded mailbox. */
+.mb-form {
+  position: fixed;
+  z-index: 45;
+  left: 50%;
+  top: 50%;
+  width: min(240px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 16px 16px 14px;
+  border-radius: 4px;
+  background: #f7f4ef;
+  color: #1b1a18;
+  font:
+    13px/1.35 -apple-system,
+    BlinkMacSystemFont,
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
+  box-shadow:
+    0 1px 2px rgba(30, 20, 10, 0.12),
+    0 24px 60px -20px rgba(30, 20, 10, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, calc(-50% + 16px)) scale(0.98);
+  transition:
+    opacity 0.35s ease,
+    transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s linear 0.45s;
+}
+#mailbox[data-form="open"] ~ .mb-form {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%);
+  transition:
+    opacity 0.35s ease,
+    transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
+    visibility 0s;
+}
+#mailbox[data-form="open"] ~ .mb-dim {
+  opacity: 0.55;
+}
+.mb-dim {
+  transition: opacity 0.45s ease;
+}
+.mb-hp {
+  position: absolute;
+  left: -9999px;
+}
+.mb-field {
+  display: block;
+  margin-bottom: 10px;
+}
+.mb-field span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: #6b655c;
+}
+.mb-field input,
+.mb-field textarea {
+  display: block;
+  width: 100%;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  color: inherit;
+  background: #fff;
+  border: 1px solid #d8d1c6;
+  border-radius: 3px;
+  padding: 6px 8px;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+/* 16px keeps iOS from zooming in on focus. */
+@media (pointer: coarse) {
+  .mb-field input,
+  .mb-field textarea {
+    font-size: 16px;
+  }
+}
+.mb-field input:focus,
+.mb-field textarea:focus {
+  border-color: #1b1a18;
+  box-shadow: 0 0 0 3px rgba(27, 26, 24, 0.08);
+}
+.mb-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+.mb-actions button {
+  font: inherit;
+  font-size: 13px;
+  color: #f7f4ef;
+  background: #1b1a18;
+  border: 0;
+  border-radius: 3px;
+  padding: 7px 16px;
+  cursor: pointer;
+}
+.mb-actions button:hover {
+  background: #36332e;
+}
+.mb-actions button:focus-visible {
+  outline: 2px solid #1b1a18;
+  outline-offset: 3px;
+}
+.mb-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.mb-status {
+  font-size: 11px;
+  color: #6b655c;
+}

@@ -12,8 +12,9 @@
    next to this file for the approach and every tunable in PARAMS.
 
    API (window.__proxyCRT):
-     powerOn()          play tv-on.mp4, then loop blue-screen.mp4
+     powerOn()          play tv-on.mp4, then blue-screen.mp4, then the program
      powerOff()         collapse the raster to a line and a dot, then stop
+     setProgram(src)    the video that follows the blue screen (null: keep blue)
      setViewScale(s)    CSS px per composition px × devicePixelRatio
      state              "off" | "on" | "collapsing"
 */
@@ -21,6 +22,12 @@
   // Glass in #tv-shot space (the 1920×1080 TV photograph). Measured against
   // the 4K source; make_overlays.py uses the same numbers.
   const GLASS = { cx: 960, cy: 496, hw: 254, hh: 176, radius: 26, bow: 4 };
+  // The program: Mohamed's video, played after the blue "by proxy" screen.
+  // Until his file lands this stays null and the blue screen keeps looping.
+  // To swap it in, drop the MP4 in assets/crt/ and set e.g. "assets/crt/program.mp4".
+  const PROGRAM_SRC = null;
+  const BLUE_HOLD = 3; // seconds of blue screen before the program starts
+  const OFF_MS = 1000; // power-off: line, dot, then the dot's afterglow fades
   const MARGIN = 10; // canvas extends this far past the glass on each side
   // The glass-surface texture covers ±(780/1080·2·hh) × ±hh around the center.
   const SURFACE_HALF = [(780 / 540) * GLASS.hh, GLASS.hh];
@@ -60,10 +67,22 @@
   });
   host.appendChild(canvas);
 
-  const api = { state: "off", ready: false, powerOn, powerOff, setViewScale, params: PARAMS };
+  const api = {
+    state: "off",
+    ready: false,
+    powerOn,
+    powerOff,
+    setViewScale,
+    setProgram,
+    params: PARAMS,
+  };
   window.__proxyCRT = api;
 
-  const gl = canvas.getContext("webgl", { premultipliedAlpha: true, alpha: true, antialias: false });
+  const gl = canvas.getContext("webgl", {
+    premultipliedAlpha: true,
+    alpha: true,
+    antialias: false,
+  });
   if (!gl) return; // The photograph stays as it is; nothing else depends on this.
 
   const VERT = `
@@ -80,7 +99,7 @@
     uniform vec4 uGlass;       // cx, cy, hw, hh
     uniform vec2 uShape;       // corner radius, edge bow
     uniform vec2 uSurfaceHalf;
-    uniform float uTime, uPower, uOff, uHasVideo;
+    uniform float uTime, uPower, uOff, uHasVideo, uTrack;
     uniform float uLines, uGrilleVis, uPxPerLocal;
     uniform float uCurv, uOverscan, uRasterEdge, uConv, uEdgeBlur, uBloom;
     uniform float uScan, uGrille, uVig, uFlicker, uNoise, uRefl, uFloor, uGain;
@@ -119,10 +138,21 @@
       float r2 = dot(n, n) * 0.5;
       vec2 r = n * (1.0 + uCurv * r2) * uOverscan;
 
-      // 2. Power-off: the raster squeezes to a line, then to a dot.
-      float sy = mix(1.0, 0.006, smoothstep(0.0, 0.6, uOff));
-      float sx = mix(1.0, 0.01, smoothstep(0.55, 0.95, uOff));
+      // 2. Power-off: the raster squeezes to a line, then to a dot, and the
+      //    dot's afterglow shrinks and fades on the phosphor.
+      float sy = mix(1.0, 0.006, smoothstep(0.0, 0.27, uOff));
+      float sx = mix(1.0, 0.01, smoothstep(0.25, 0.42, uOff));
+      float dotFade = 1.0 - smoothstep(0.42, 1.0, uOff);
+      sx *= mix(1.0, 0.4, 1.0 - dotFade);
+      sy *= mix(1.0, 0.4, 1.0 - dotFade);
       vec2 rs = r / vec2(sx, sy);
+      float frame = floor(uTime * 60.0);
+      // Tape tracking noise while the deck switches from blue to the program:
+      // lines tear sideways in bands.
+      if (uTrack > 0.0) {
+        float band = floor(rs.y * 22.0 + uTime * 9.0);
+        rs.x += uTrack * (hash(vec2(band, frame)) - 0.5) * 0.09;
+      }
 
       // Raster edge: soft, rounded where the curved raster misses the corners.
       vec2 edge = smoothstep(1.0, 1.0 - uRasterEdge, abs(rs));
@@ -159,14 +189,17 @@
         emit = c * uGain;
       }
       // Power-off collapse burns white-hot as the beam concentrates.
-      emit = mix(emit, vec3(0.92, 0.95, 1.0) * 1.6, smoothstep(0.1, 0.7, uOff));
-      emit *= raster;
+      emit = mix(emit, vec3(0.92, 0.95, 1.0) * 1.6, smoothstep(0.05, 0.3, uOff));
+      emit *= raster * dotFade;
+      // The concentrated beam blooms on the glass around the line and dot.
+      float halo = exp(-dot(r / vec2(max(sx, 0.02), max(sy, 0.02)), r / vec2(max(sx, 0.02), max(sy, 0.02))) * 0.6);
+      emit += vec3(0.78, 0.86, 1.0) * halo * smoothstep(0.1, 0.35, uOff) * dotFade * dotFade * 0.55;
+      emit += uTrack * 0.35 * hash(vec2(floor(rs.y * 120.0), frame)) * step(0.82, hash(vec2(floor(rs.y * 22.0), frame + 3.0))) * raster;
 
       // 8. Vignette and the darker strip just inside the bezel.
       emit *= 1.0 - uVig * pow(min(r2 * 1.1, 1.0), 1.5);
       emit *= 1.0 - 0.45 * smoothstep(-16.0, -2.0, sd);
       // 9. Tube flicker and noise.
-      float frame = floor(uTime * 60.0);
       emit *= 1.0 + uFlicker * (hash(vec2(frame, 1.7)) - 0.5) * 2.0;
       emit += uNoise * (hash(gl_FragCoord.xy + frame) - 0.5) * raster;
       emit = max(emit * uPower, 0.0);
@@ -250,12 +283,15 @@
   }
   const tvOn = video("assets/crt/tv-on.mp4", false);
   const blue = video("assets/crt/blue-screen.mp4", true);
+  let program = PROGRAM_SRC ? video(PROGRAM_SRC, true) : null;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   let current = null,
     offStart = 0,
     raf = 0,
     viewScale = 1,
-    lastBacking = 0;
+    lastBacking = 0,
+    blueSince = 0,
+    trackUntil = 0;
 
   // The flash hands over to the loop on its last frames; both are the same blue.
   tvOn.addEventListener("timeupdate", () => {
@@ -263,8 +299,37 @@
       blue.play().catch(() => {});
   });
   tvOn.addEventListener("ended", () => {
-    if (api.state === "on") current = blue;
+    if (api.state === "on") showBlue();
   });
+  function showBlue() {
+    current = blue;
+    blueSince = performance.now();
+    if (blue.paused) blue.play().catch(() => {});
+  }
+  // After BLUE_HOLD seconds of blue the deck rolls the program, through a
+  // moment of tracking noise. Without a program the blue screen keeps looping.
+  function maybeStartProgram(now) {
+    if (!program || current !== blue || now - blueSince < BLUE_HOLD * 1000) return;
+    if (program.readyState < 2) return; // keep blue until its first frame is in
+    program.currentTime = 0;
+    program.play().catch(() => {});
+    trackUntil = now + 450;
+    current = program;
+    blue.pause();
+  }
+  function setProgram(src) {
+    if (program) {
+      program.pause();
+      if (current === program) {
+        current = null;
+        if (api.state !== "off") showBlue();
+      }
+      // Release the previous resource, including pending preload/network work.
+      program.removeAttribute("src");
+      program.load();
+    }
+    program = src ? video(src, true) : null;
+  }
 
   function powerOn() {
     if (api.state === "on") return;
@@ -272,9 +337,9 @@
     canvas.style.visibility = "visible";
     blue.pause();
     blue.currentTime = 0;
+    program?.pause();
     if (reduced.matches) {
-      current = blue;
-      blue.play().catch(() => {});
+      showBlue();
     } else {
       current = tvOn;
       tvOn.currentTime = 0;
@@ -318,16 +383,18 @@
 
     let off = 0;
     if (api.state === "collapsing") {
-      off = Math.min(1, (now - offStart) / 450);
+      off = Math.min(1, (now - offStart) / OFF_MS);
       if (off >= 1) {
         api.state = "off";
         tvOn.pause();
         blue.pause();
+        program?.pause();
         current = null;
         canvas.style.visibility = "hidden";
         return;
       }
     }
+    if (api.state === "on") maybeStartProgram(now);
     const v = current;
     const hasVideo = v && v.readyState >= 2;
     if (hasVideo) {
@@ -341,6 +408,7 @@
     gl.uniform1f(U.uTime, now / 1000);
     gl.uniform1f(U.uPower, 1);
     gl.uniform1f(U.uOff, off);
+    gl.uniform1f(U.uTrack, Math.max(0, Math.min(1, (trackUntil - now) / 450)));
     gl.uniform1f(U.uCurv, P.curvature);
     gl.uniform1f(U.uOverscan, P.overscan);
     gl.uniform1f(U.uRasterEdge, P.rasterEdge);

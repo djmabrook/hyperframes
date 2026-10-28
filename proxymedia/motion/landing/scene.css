@@ -42,7 +42,15 @@ body,
 }
 #tv-shot {
   top: 2240px;
-  mask-image: linear-gradient(transparent, #000 15%, #000 90%, transparent);
+  /* No fade at the bottom: #tv-floor continues the wall seamlessly. */
+  mask-image: linear-gradient(transparent, #000 15%);
+}
+#tv-floor {
+  /* Overlaps the bottom 80px of the TV photo and dissolves in over it, so
+     the plaster carries on below without a line. */
+  top: 3240px;
+  height: 620px;
+  mask-image: linear-gradient(transparent, #000 80px, #000 83%, transparent);
 }
 #vcr-closed {
   opacity: 0;

@@ -13,7 +13,8 @@ It is one self-contained file: plain WebGL 1, no Three.js, no build step.
 - **Phosphor.** Scanlines are computed in raster space, so they curve with the picture. The line count adapts to the on-screen size (about 3.2 device px per line, 160 to 480 lines) to avoid moiré. The Trinitron aperture grille (vertical RGB stripes on device pixels) only fades in when the glass is more than about 1200 device px wide.
 - **Tube.** Vignette, a darker strip just inside the bezel, per-frame flicker and fine noise.
 - **Glass on top.** `assets/crt/overlays/glass-surface.png` (the real glass from the photograph: window reflection, ceiling glow, dust) is screen-blended over the emitted light, minus a little of its grey floor where the tube is lit. When the picture is black the result is exactly the photograph, so power-on and power-off have no visible seam.
-- **Power-off.** `uOff` goes from 0 to 1 over 450 ms. The raster squeezes vertically to a line, then horizontally to a dot, burning white-hot as it goes.
+- **Power-off.** `uOff` goes from 0 to 1 over 1 s. The raster squeezes vertically to a line (270 ms), then horizontally to a dot, burning white-hot with a bloom on the glass; the dot's afterglow then shrinks and fades.
+- **Program.** `PROGRAM_SRC` (top of the file) is the video that follows 3 s of blue screen, entered through a burst of tape-tracking noise (`uTrack`). `null` keeps the blue screen looping. `setProgram(src)` swaps it at runtime.
 - **Reduced motion.** With `prefers-reduced-motion`, the flash is skipped and the set opens on the blue screen.
 
 ## Parameters (`PARAMS` at the top of the file)
@@ -39,7 +40,7 @@ They can be changed live from the console of the composition frame: `__proxyCRT.
 
 ## API
 
-`window.__proxyCRT` inside the composition iframe: `powerOn()`, `powerOff()`, `setViewScale(cssPxPerCompositionPx × devicePixelRatio)` and `state` (`off`, `on` or `collapsing`). `proxymedia/scroll.js` calls these. The set turns on at composition time 13.7 s, when the punch lands, and turns off below 13.55 s.
+`window.__proxyCRT` inside the composition iframe: `powerOn()`, `powerOff()`, `setProgram(src)`, `setViewScale(cssPxPerCompositionPx × devicePixelRatio)` and `state` (`off`, `on` or `collapsing`). `proxymedia/scroll.js` calls these. The set turns on at composition time 13.7 s, when the punch lands, and turns off below 13.55 s, or when the scroll passes `#mark-off` (see `../../../tape/README.md`).
 
 ## Assets
 
