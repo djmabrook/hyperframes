@@ -69,8 +69,9 @@
 #mailbox .scene-view {
   background: #e4d7c8 url("media/wall-blank.webp") center / cover;
 }
-/* The photographed plate in its own 3840 x 2160 space, scaled to the screen.
-   The perspective matches the plate's camera, square to the wall. */
+/* The photographed plate (the mailbox small on the blank wall) in its own
+   3840 x 2160 space, filling the screen like the other frames. The
+   perspective matches the plate's camera, square to the wall. */
 .mb-plate {
   position: absolute;
   left: 0;
@@ -81,12 +82,6 @@
   perspective: 3840px;
   perspective-origin: 50% 50%;
 }
-/* The plate sits smaller than the screen, so its edges dissolve into the
-   same plaster around it. */
-.mb-plate {
-  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%);
-  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%);
-}
 .mb-photo {
   position: absolute;
   inset: 0;
@@ -96,10 +91,10 @@
 /* The middle door, hinged on its left edge. */
 .mb-door {
   position: absolute;
-  left: 1704px;
-  top: 523px;
-  width: 425px;
-  height: 1139px;
+  left: 1815px;
+  top: 795px;
+  width: 213px;
+  height: 570px;
   transform-origin: 0 50%;
   transform: rotateY(calc(var(--door, 0) * -1deg));
   transform-style: preserve-3d;

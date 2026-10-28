@@ -14,8 +14,7 @@
   // Plate units (the 3840 x 2160 photograph) and the middle door's opening.
   const PW = 3840,
     PH = 2160;
-  const OPEN = { x: 1704, y: 523, w: 425, h: 1139 };
-  const BOX_W = 1880;
+  const OPEN = { x: 1815, y: 795, w: 213, h: 570 };
 
   const clamp = (v) => Math.max(0, Math.min(1, v));
   const ease = (v) => v * v * (3 - 2 * v);
@@ -34,11 +33,9 @@
   function layout() {
     vw = innerWidth;
     vh = innerHeight;
-    // Fill the screen like the other frames, but keep the mailbox in frame:
-    // all of it on wide screens, the middle three doors on a portrait phone.
-    const keep = vw < vh ? 1350 : BOX_W;
-    // Then half that: the mailbox sits small on a big wall.
-    scale = 0.5 * Math.min(Math.max(vw / PW, vh / PH), (vw * 0.96) / keep);
+    // Fill the screen like the other frames; the mailbox already sits small
+    // in the middle of the photograph.
+    scale = Math.max(vw / PW, vh / PH);
     wake();
   }
 
@@ -76,7 +73,10 @@
     const k = scale * (1 + 0.07 * a);
     const fx = OPEN.x + OPEN.w / 2,
       fy = PH / 2 + (OPEN.y + OPEN.h / 2 - PH / 2) * a * 0.5;
-    plate.style.transform = `translate(${vw / 2 - fx * k}px, ${vh / 2 - fy * k}px) scale(${k})`;
+    // Never show past the edge of the photograph.
+    const cx = Math.max(vw / (2 * k), Math.min(PW - vw / (2 * k), fx)),
+      cy = Math.max(vh / (2 * k), Math.min(PH - vh / (2 * k), fy));
+    plate.style.transform = `translate(${vw / 2 - cx * k}px, ${vh / 2 - cy * k}px) scale(${k})`;
     door.style.setProperty("--door", (S.door.x * 118).toFixed(2));
     // Once the door is open the form comes up, and the wall falls into shade.
     const open = locked || p > 0.5;
