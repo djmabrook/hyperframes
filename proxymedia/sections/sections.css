@@ -1,14 +1,4 @@
 /* Sections after the landing sequence: Sharpie on the wall, then the mailbox. */
-@font-face {
-  font-family: "Sedgwick Ave Display";
-  src: url("media/sedgwick-ave-display.woff2") format("woff2");
-  font-display: block;
-}
-@font-face {
-  font-family: "Caveat Brush";
-  src: url("media/caveat-brush.woff2") format("woff2");
-  font-display: block;
-}
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -42,135 +32,39 @@
 
 /* ---------- Sharpie on the wall ---------- */
 #notes {
-  height: 220vh;
+  height: 260vh;
   /* The tape dangles over the end of the landing; let the wall rise softly
      instead of with a hard seam. */
   -webkit-mask-image: linear-gradient(transparent, #000 6vh);
   mask-image: linear-gradient(transparent, #000 6vh);
 }
-#notes .scene-view {
-  transform: translateY(calc(var(--settle, 0) * 3vh)) scale(calc(1 + var(--settle, 0) * 0.04));
+/* The wall photograph in its own 3840 x 2160 space, scaled (and on phones
+   panned) to the screen. The handwriting is photographed too: each line is a
+   crop of Codex's plate laid over the blank wall it was written on. */
+.nt-plate {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3840px;
+  height: 2160px;
+  transform-origin: 0 0;
 }
-.nt-writing,
-.nt-ink {
+.nt-wall {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  /* Ink sinks into the plaster rather than sitting on top of it. */
-  mix-blend-mode: multiply;
 }
-.nt-ink {
-  cursor: crosshair;
-  touch-action: pan-y pinch-zoom;
-}
-#notes[data-drawing="true"] .nt-ink {
-  touch-action: none;
-}
-.nt-sharpie,
-.nt-roller {
-  all: unset;
+.nt-line {
   position: absolute;
-  bottom: 5vh;
-  cursor: pointer;
-  filter: drop-shadow(2px 5px 4px rgba(50, 34, 18, 0.35));
-  transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.5, 1);
-}
-.nt-sharpie:focus-visible,
-.nt-roller:focus-visible {
-  outline: 2px solid #1d3f9e;
-  outline-offset: 4px;
-}
-/* Only touch screens need the Sharpie to switch the wall from scrolling to
-   writing; a mouse writes straight away. */
-.nt-sharpie {
-  display: none;
-  left: 6vw;
-  width: 132px;
-  height: 16px;
-  border-radius: 3px 8px 8px 3px;
-  transform: rotate(-8deg);
-  background:
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 45%, rgba(0, 0, 0, 0.25)),
-    linear-gradient(to right, #1a1a1d 0 34%, #d9d9d6 34% 72%, #1a1a1d 72% 100%);
-}
-.nt-sharpie i {
-  /* The cap, which comes off while writing. */
-  position: absolute;
-  left: -2px;
-  top: -2px;
-  width: 48px;
-  height: 20px;
-  border-radius: 4px;
-  background: linear-gradient(to bottom, #3a3a3e, #121214 60%, #000);
-  transition: transform 0.3s ease;
-}
-@media (pointer: coarse) {
-  .nt-sharpie {
-    display: block;
-  }
-}
-#notes[data-drawing="true"] .nt-sharpie {
-  transform: rotate(-24deg) translateY(-14px);
-}
-#notes[data-drawing="true"] .nt-sharpie i {
-  transform: translate(-46px, 18px) rotate(30deg);
-}
-/* A small paint roller to paint over the visitor's writing. */
-.nt-roller {
-  right: 7vw;
-  width: 96px;
-  height: 86px;
-  transform: rotate(6deg);
-}
-.nt-roller::before {
-  /* Roller sleeve, white paint caked on. */
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 96px;
-  height: 30px;
-  border-radius: 14px;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), transparent 40%),
-    repeating-linear-gradient(90deg, #f1eee8 0 3px, #e2ddd4 3px 5px),
-    #ece8e0;
-  box-shadow: inset 0 -6px 8px rgba(0, 0, 0, 0.12);
-}
-.nt-roller i {
-  /* Frame and handle. */
-  position: absolute;
-  left: 44px;
-  top: 28px;
-  width: 9px;
-  height: 58px;
-  border-radius: 4px;
-  background: linear-gradient(to right, #6f6f72, #b7b7b9 40%, #59595c);
-}
-.nt-roller i::after {
-  content: "";
-  position: absolute;
-  left: -5px;
-  top: 26px;
-  width: 19px;
-  height: 34px;
-  border-radius: 6px;
-  background: linear-gradient(to right, #a3271f, #d2453a 45%, #84201a);
-}
-.nt-roller:hover,
-.nt-roller:focus-visible {
-  transform: rotate(-4deg) translateY(-6px);
 }
 
 /* ---------- Mailbox ---------- */
 #mailbox {
   height: 300vh;
 }
-/* Above and below the plate on tall screens: the plate's own wall tone. */
 #mailbox .scene-view {
-  background: #e2d4c4 url("media/plaster.webp") center / cover;
-  background-blend-mode: soft-light;
+  background: #e4d7c8 url("media/wall-blank.webp") center / cover;
 }
 /* The photographed plate in its own 3840 x 2160 space, scaled to the screen.
    The perspective matches the plate's camera, square to the wall. */
@@ -184,9 +78,11 @@
   perspective: 3840px;
   perspective-origin: 50% 50%;
 }
-.mb-plate.letterbox {
-  -webkit-mask-image: linear-gradient(transparent 0, #000 12%, #000 88%, transparent 100%);
-  mask-image: linear-gradient(transparent 0, #000 12%, #000 88%, transparent 100%);
+/* The plate sits smaller than the screen, so its edges dissolve into the
+   same plaster around it. */
+.mb-plate {
+  -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%);
+  mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%);
 }
 .mb-photo {
   position: absolute;
@@ -233,15 +129,15 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: min(420px, calc(100vw - 32px));
+  width: min(240px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
   overflow: auto;
-  padding: 28px 28px 24px;
-  border-radius: 6px;
+  padding: 16px 16px 14px;
+  border-radius: 4px;
   background: #f7f4ef;
   color: #1b1a18;
   font:
-    15px/1.4 -apple-system,
+    13px/1.35 -apple-system,
     BlinkMacSystemFont,
     "Helvetica Neue",
     Arial,
@@ -251,7 +147,7 @@
     0 24px 60px -20px rgba(30, 20, 10, 0.5);
   opacity: 0;
   visibility: hidden;
-  transform: translate(-50%, calc(-50% + 28px)) scale(0.98);
+  transform: translate(-50%, calc(-50% + 16px)) scale(0.98);
   transition:
     opacity 0.35s ease,
     transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -278,30 +174,36 @@
 }
 .mb-field {
   display: block;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 .mb-field span {
   display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
+  margin-bottom: 4px;
+  font-size: 11px;
   color: #6b655c;
 }
 .mb-field input,
 .mb-field textarea {
   display: block;
   width: 100%;
-  /* 16px keeps iOS from zooming in on focus. */
   font-family: inherit;
-  font-size: 16px;
-  line-height: 1.4;
+  font-size: 13px;
+  line-height: 1.35;
   color: inherit;
   background: #fff;
   border: 1px solid #d8d1c6;
-  border-radius: 4px;
-  padding: 10px 12px;
+  border-radius: 3px;
+  padding: 6px 8px;
   outline: none;
   resize: vertical;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+/* 16px keeps iOS from zooming in on focus. */
+@media (pointer: coarse) {
+  .mb-field input,
+  .mb-field textarea {
+    font-size: 16px;
+  }
 }
 .mb-field input:focus,
 .mb-field textarea:focus {
@@ -311,17 +213,17 @@
 .mb-actions {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-top: 4px;
+  gap: 10px;
+  margin-top: 2px;
 }
 .mb-actions button {
   font: inherit;
-  font-size: 15px;
+  font-size: 13px;
   color: #f7f4ef;
   background: #1b1a18;
   border: 0;
-  border-radius: 4px;
-  padding: 10px 22px;
+  border-radius: 3px;
+  padding: 7px 16px;
   cursor: pointer;
 }
 .mb-actions button:hover {
@@ -336,6 +238,6 @@
   cursor: default;
 }
 .mb-status {
-  font-size: 13px;
+  font-size: 11px;
   color: #6b655c;
 }

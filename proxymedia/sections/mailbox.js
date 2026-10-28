@@ -37,8 +37,8 @@
     // Fill the screen like the other frames, but keep the mailbox in frame:
     // all of it on wide screens, the middle three doors on a portrait phone.
     const keep = vw < vh ? 1350 : BOX_W;
-    scale = Math.min(Math.max(vw / PW, vh / PH), (vw * 0.96) / keep);
-    plate.classList.toggle("letterbox", PH * scale < vh - 1);
+    // Then half that: the mailbox sits small on a big wall.
+    scale = 0.5 * Math.min(Math.max(vw / PW, vh / PH), (vw * 0.96) / keep);
     wake();
   }
 

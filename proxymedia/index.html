@@ -128,10 +128,15 @@
     </div>
     <section id="notes" class="scene" aria-label="Projects">
       <div class="scene-view">
-        <canvas class="nt-writing" aria-hidden="true"></canvas>
-        <canvas class="nt-ink" aria-hidden="true"></canvas>
-        <button class="nt-sharpie" type="button" aria-label="Sharpie" title="Sharpie"><i></i></button>
-        <button class="nt-roller" type="button" aria-label="Paint over" title="Paint over"><i></i></button>
+        <div class="nt-plate" aria-hidden="true">
+          <img class="nt-wall" src="sections/media/wall-blank.webp" alt="" />
+          <img class="nt-line" src="sections/media/wall-line-0.webp" alt="" style="left: 538px; top: 468px; width: 259px; height: 87px" />
+          <img class="nt-line" src="sections/media/wall-line-1.webp" alt="" style="left: 561px; top: 569px; width: 292px; height: 86px" />
+          <img class="nt-line" src="sections/media/wall-line-2.webp" alt="" style="left: 541px; top: 668px; width: 261px; height: 87px" />
+          <img class="nt-line" src="sections/media/wall-line-3.webp" alt="" style="left: 2287px; top: 1110px; width: 253px; height: 86px" />
+          <img class="nt-line" src="sections/media/wall-line-4.webp" alt="" style="left: 2306px; top: 1208px; width: 289px; height: 87px" />
+          <img class="nt-line" src="sections/media/wall-line-5.webp" alt="" style="left: 838px; top: 1679px; width: 199px; height: 87px" />
+        </div>
       </div>
       <div class="visually-hidden">
         <h2>In Development</h2>
@@ -178,7 +183,7 @@
           </label>
           <label class="mb-field">
             <span>Message</span>
-            <textarea name="message" rows="5" required></textarea>
+            <textarea name="message" rows="4" required></textarea>
           </label>
           <div class="mb-actions">
             <button type="submit">Send</button>
