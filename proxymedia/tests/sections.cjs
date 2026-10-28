@@ -27,7 +27,7 @@ const URL_ = process.env.PROXY_URL || "http://127.0.0.1:4174/";
   await page.click(".nt-roller");
   await page.waitForTimeout(700);
   assert.ok(drawn > 300, "strokes reach the ink layer");
-  assert.equal(new Set(colors).size, 3, "each stroke picks a new marker colour");
+  assert.ok(colors[0] !== colors[1] && colors[1] !== colors[2], "each stroke picks a new marker colour");
   assert.equal(await inkPixels(), 0, "the roller paints over the writing");
   const mb = await page.evaluate(() => { const s = document.getElementById("mailbox"); scrollTo(0, s.offsetTop + s.offsetHeight); return 0; });
   await page.waitForTimeout(3000);

@@ -148,68 +148,43 @@
     </section>
     <section id="mailbox" class="scene" aria-label="Contact">
       <div class="scene-view">
-        <div class="mb-wall-dim" aria-hidden="true"></div>
-        <div class="mb-camera">
-          <div class="mb-rig" aria-hidden="true">
-            <div class="mb-shadow"></div>
-            <div class="mb-face mb-side mb-left"></div>
-            <div class="mb-face mb-side mb-right"></div>
-            <div class="mb-face mb-cap mb-top"></div>
-            <div class="mb-face mb-cap mb-bottom"></div>
-            <div class="mb-cubby">
-              <div class="mb-cubby-back"></div>
-              <div class="mb-cubby-wall mb-cubby-l"></div>
-              <div class="mb-cubby-wall mb-cubby-r"></div>
-              <div class="mb-cubby-floor mb-cubby-t"></div>
-              <div class="mb-cubby-floor mb-cubby-b"></div>
-            </div>
-            <div class="mb-front">
-              <div class="mb-rail"></div>
-              <div class="mb-door" style="--i: 0"><i class="mb-slot"></i><i class="mb-lock"></i></div>
-              <div class="mb-door" style="--i: 1"><i class="mb-slot"></i><i class="mb-lock"></i></div>
-              <div class="mb-door" style="--i: 3"><i class="mb-slot"></i><i class="mb-lock"></i></div>
-              <div class="mb-door" style="--i: 4"><i class="mb-slot"></i><i class="mb-lock"></i></div>
-              <div class="mb-bezel"></div>
-            </div>
-            <div class="mb-door mb-door-open" style="--i: 2">
-              <div class="mb-door-front">
-                <i class="mb-hole"></i>
-                <div class="mb-label"><b>U.S. MAIL</b><i></i><i></i></div>
-                <i class="mb-slot"></i><i class="mb-lock"></i>
-              </div>
-              <div class="mb-door-back"></div>
-            </div>
+        <div class="mb-plate" aria-hidden="true">
+          <img class="mb-photo" src="sections/media/mailbox-open.webp" alt="" />
+          <div class="mb-door">
+            <img class="mb-door-front" src="sections/media/mailbox-door-front.webp" alt="" />
+            <img class="mb-door-back" src="sections/media/mailbox-door-back.webp" alt="" />
           </div>
-          <form
-            class="mb-form"
-            name="contact"
-            method="POST"
-            action="/"
-            data-netlify="true"
-            netlify-honeypot="bot-field"
-          >
-            <input type="hidden" name="form-name" value="contact" />
-            <p class="mb-hp">
-              <label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
-            </p>
-            <label class="mb-field">
-              <span>Name</span>
-              <input name="name" type="text" autocomplete="name" required />
-            </label>
-            <label class="mb-field">
-              <span>Email</span>
-              <input name="email" type="email" autocomplete="email" required />
-            </label>
-            <label class="mb-field">
-              <span>Message</span>
-              <textarea name="message" rows="5" required></textarea>
-            </label>
-            <div class="mb-actions">
-              <button type="submit">Send</button>
-              <output class="mb-status" aria-live="polite"></output>
-            </div>
-          </form>
         </div>
+        <div class="mb-dim" aria-hidden="true"></div>
+        <form
+          class="mb-form"
+          name="contact"
+          method="POST"
+          action="/"
+          data-netlify="true"
+          netlify-honeypot="bot-field"
+        >
+          <input type="hidden" name="form-name" value="contact" />
+          <p class="mb-hp">
+            <label>Leave this empty <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+          </p>
+          <label class="mb-field">
+            <span>Name</span>
+            <input name="name" type="text" autocomplete="name" required />
+          </label>
+          <label class="mb-field">
+            <span>Email</span>
+            <input name="email" type="email" autocomplete="email" required />
+          </label>
+          <label class="mb-field">
+            <span>Message</span>
+            <textarea name="message" rows="5" required></textarea>
+          </label>
+          <div class="mb-actions">
+            <button type="submit">Send</button>
+            <output class="mb-status" aria-live="polite"></output>
+          </div>
+        </form>
       </div>
     </section>
     <div id="vignette" aria-hidden="true"></div>

@@ -4,17 +4,22 @@
 (() => {
   const section = document.getElementById("mailbox");
   if (!section) return;
-  const rig = section.querySelector(".mb-rig");
-  const door = section.querySelector(".mb-door-open");
+  const plate = section.querySelector(".mb-plate");
+  const door = section.querySelector(".mb-door");
   const form = section.querySelector(".mb-form");
   const status = form.querySelector(".mb-status");
   const submit = form.querySelector("button[type=submit]");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
 
-  // Rig units: the box is 980 x 600, the open cubby 178 x 490 at (401, 62).
-  const BOX_W = 980,
-    BOX_H = 600;
-  const CUBBY = { x: 401, y: 62, w: 178, h: 490 };
+  // Plate units (the 3840 x 2160 photograph). The middle door's opening, its
+  // floor lip, and roughly how deep the compartment runs behind it.
+  const PW = 3840,
+    PH = 2160,
+    P = 3840;
+  const OPEN = { x: 1704, y: 523, w: 425, h: 1139 };
+  const LIP = 1640,
+    DEPTH = 1400;
+  const BOX = { x: 980, w: 1880 };
 
   const clamp = (v) => Math.max(0, Math.min(1, v));
   const ease = (v) => v * v * (3 - 2 * v);
@@ -43,9 +48,11 @@
   function layout() {
     vw = innerWidth;
     vh = innerHeight;
-    const portrait = vw < vh;
-    // The box fills most of the width, leaving the plaster around it.
-    scale = Math.min((vw * (portrait ? 0.94 : 0.62)) / BOX_W, (vh * 0.62) / BOX_H);
+    // Fill the screen like the other frames, but keep the mailbox in frame:
+    // all of it on wide screens, the middle three doors on a portrait phone.
+    const keep = vw < vh ? 1350 : BOX.w;
+    scale = Math.min(Math.max(vw / PW, vh / PH), (vw * 0.96) / keep);
+    plate.classList.toggle("letterbox", PH * scale < vh - 1);
     fw = Math.min(440, vw - 32);
     form.style.width = `${fw}px`;
     form.style.padding = fw < 400 ? "24px 20px 18px" : "";
@@ -104,48 +111,42 @@
       dr = S.droop.x,
       r = clamp(S.rise.x),
       er = ease(r);
-    // Camera: in from a three-quarter view, squaring up as the paper rises
-    // while the box falls back behind it.
-    const theta = 22 - 10 * a - 12 * r;
-    const s = scale * (0.86 + 0.14 * a);
-    const back = 280 * er;
-    const cx = vw / 2 - vw * 0.025 * (1 - r);
-    const cy = vh * 0.5 + vh * 0.04 * (1 - a);
-    const rigT =
-      `translate(${cx}px, ${cy}px) translateZ(${-back}px) scale(${s})` +
-      ` rotateY(${theta}deg) translate(${-BOX_W / 2}px, ${-BOX_H / 2}px)`;
-    rig.style.transform = rigT;
-    door.style.setProperty("--door", `${(d * 114).toFixed(2)}deg`);
-    door.style.setProperty("--door-light", (Math.sin(Math.min(1, d) * Math.PI * 0.6) * 0.35).toFixed(3));
+    // Camera: a slow push in toward the middle door.
+    const k = scale * (1 + 0.07 * a);
+    const fx = OPEN.x + OPEN.w / 2,
+      fy = PH / 2 + (OPEN.y + OPEN.h / 2 - PH / 2) * a * 0.5;
+    const ox = vw / 2 - fx * k,
+      oy = vh / 2 - fy * k;
+    const plateT = `translate(${ox}px, ${oy}px) scale(${k})`;
+    plate.style.transform = plateT;
+    door.style.setProperty("--door", (d * 118).toFixed(2));
     section.style.setProperty("--dim", (0.6 * er).toFixed(3));
-    // Once the paper is clear of the box, draw it over the box rather than
-    // depth-sorting it with the box's faces (which some GPUs tile badly).
-    section.classList.toggle("paper-out", r > 0.3);
 
-    // The paper, in rig units, pivoting on its top edge. It lies face up in
-    // the cubby, slides out over the lip, tips down to hang face out with a
-    // bounce, then lifts to the middle of the screen at its real size.
-    const k = Math.min((CUBBY.w * 0.75) / fw, 150 / fh);
-    const lip = CUBBY.y + CUBBY.h;
-    const hx = CUBBY.x + CUBBY.w / 2,
-      hy = lip - 2,
-      hz = -176 + 162 * sl;
-    const fx = BOX_W / 2,
-      fy = BOX_H / 2 - fh / (2 * s);
-    const X = hx + (fx - hx) * er - fw / 2;
-    const Y = hy + (fy - hy) * er;
-    const Z = hz + (back - hz) * er;
+    // The paper, in plate units, pivoting on its top edge. It lies face up on
+    // the compartment floor, slides out over the lip, tips down to hang face
+    // out with a bounce, then lifts to the middle of the screen at real size.
+    const S0 = (OPEN.w * 0.72) / fw;
+    const hx = OPEN.x + OPEN.w / 2,
+      hy = LIP,
+      hz = -DEPTH * 0.55 * (1 - sl) + 6;
+    const tx = (vw / 2 - ox) / k,
+      ty = (vh / 2 - fh / 2 - oy) / k;
+    const X = hx + (tx - hx) * er - fw / 2;
+    const Y = hy + (ty - hy) * er;
+    const Z = hz * (1 - er);
     const angle = 90 * (1 - dr) * (1 - er);
-    const S2 = k + (1 / s - k) * er;
+    const S2 = S0 + (1 / k - S0) * er;
     const wob = S.droop.v * 0.5 * (1 - r);
-    form.dataset.state = d < 0.2 && sl < 0.01 ? "hidden" : "shown";
+    form.dataset.state = d < 0.3 ? "hidden" : "shown";
     if (r >= 0.999 && Math.abs(S.rise.v) < 0.001) {
       // At rest: a plain 2D placement so the text and inputs are crisp.
       form.style.transform = `translate(${Math.round(vw / 2 - fw / 2)}px, ${Math.round(vh / 2 - fh / 2)}px)`;
       form.dataset.settled = "true";
     } else {
+      // The plate's own perspective, written out so the paper shares it.
       form.style.transform =
-        `${rigT} translate3d(${X}px, ${Y}px, ${Z}px) translateX(${fw / 2}px)` +
+        `${plateT} translate(${PW / 2}px, ${PH / 2}px) perspective(${P}px) translate(${-PW / 2}px, ${-PH / 2}px)` +
+        ` translate3d(${X}px, ${Y}px, ${Z}px) translateX(${fw / 2}px)` +
         ` rotateX(${angle}deg) rotateZ(${wob.toFixed(2)}deg) scale(${S2}) translateX(${-fw / 2}px)`;
       form.dataset.settled = "false";
     }
