@@ -28,11 +28,11 @@ export const CLIPS = {
     { title: "For Ahkeem", year: "2014–2016", format: "Feature Documentary", credit: "Post Production Supervisor", video: "media/doc-for-ahkeem.mp4", poster: "media/doc-for-ahkeem.jpg", colour: "#4c9a4c", placeholder: false },
   ],
   commercial: [
-    { title: "Mirror Launch", video: "media/com-01.mp4", poster: "media/com-01.jpg", colour: "#4c9a4c", placeholder: false },
+    { title: "Signal", video: "media/com-06.mp4", poster: "media/com-06.jpg", colour: "#6fb7d9", placeholder: false },
     { title: "Heineken", video: "media/com-02.mp4", poster: "media/com-02.jpg", colour: "#e06a9a", placeholder: false },
     { title: "Blue Bird Bio", video: "media/com-03.mp4", poster: "media/com-03.jpg", colour: "#e6d84a", placeholder: false },
     { title: "Seamless", video: "media/com-04.mp4", poster: "media/com-04.jpg", colour: "#e04a4a", placeholder: false },
     { title: "NYC Public Schools", video: "media/com-05.mp4", poster: "media/com-05.jpg", colour: "#f27a41", placeholder: false },
-    { title: "Placeholder 06", video, poster, colour: "#6fb7d9" },
+    { title: "Mirror Launch", video: "media/com-01.mp4", poster: "media/com-01.jpg", colour: "#4c9a4c", placeholder: false },
   ],
 };
