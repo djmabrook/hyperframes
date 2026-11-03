@@ -140,11 +140,6 @@
     }
   });
 
-  // Decode the wall's photographs up front (they are sync-decoded, so the
-  // browser holds the last frame rather than painting bare tiles while a
-  // plate is still decoding on first reach).
-  for (const img of section.querySelectorAll("img")) img.decode?.().catch(() => {});
-
   addEventListener("scroll", wake, { passive: true });
   addEventListener("resize", layout, { passive: true });
   layout();
