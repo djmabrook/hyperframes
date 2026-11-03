@@ -25,20 +25,20 @@
       data-height="1080"
     >
       <div id="world" data-layout-allow-overflow>
-        <div class="shot" id="wall-shot"><img src="assets/img/wall.webp" alt="" /></div>
+        <div class="shot" id="wall-shot"><img decoding="sync" src="assets/img/wall.webp" alt="" /></div>
         <div class="shot" id="vcr-shot">
-          <img src="assets/img/vcr-open.webp" alt="" /><img
+          <img decoding="sync" src="assets/img/vcr-open.webp" alt="" /><img
             id="vcr-closed"
             src="assets/img/vcr-closed.webp"
             alt=""
           />
         </div>
         <div class="shot" id="tv-shot" data-layout-allow-overflow>
-          <img src="assets/img/tv-wall.webp" alt="" />
+          <img decoding="sync" src="assets/img/tv-wall.webp" alt="" />
         </div>
         <!-- More of the same plaster below the TV (the photo's bottom strip,
              mirror-tiled), for when the camera pulls back and drifts down. -->
-        <div class="shot" id="tv-floor"><img src="assets/img/tv-floor.webp" alt="" /></div>
+        <div class="shot" id="tv-floor"><img decoding="sync" src="assets/img/tv-floor.webp" alt="" /></div>
         <div id="tape-mask">
           <canvas id="tape-model"></canvas>
         </div>
@@ -50,6 +50,10 @@
     <script>
       window.__timelines = window.__timelines || {};
       window.__timelines["main"] = window.__proxyScene.timeline;
+      // Decode every plate now, so the pull-back past the TV never reaches a
+      // wall the browser hasn't decoded yet (they are sync-decoded, so paint
+      // waits for them rather than showing bare tiles).
+      for (const img of document.images) img.decode?.().catch(() => {});
     </script>
     <script type="module" src="tape-model.js"></script>
     <script src="crt/crt-screen.js"></script>
