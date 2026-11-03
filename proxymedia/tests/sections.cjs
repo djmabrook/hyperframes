@@ -15,9 +15,17 @@ const URL_ = process.env.PROXY_URL || "http://127.0.0.1:4174/";
   await page.waitForTimeout(1500);
   assert.equal(
     await page.evaluate(() => [...document.querySelectorAll("#mailbox img")].filter((i) => i.complete && i.naturalWidth).length),
-    9,
-    "the mailbox, its door and the six lines of writing load",
+    10,
+    "the mailbox, its door, the six lines of writing and the link scrawl load",
   );
+  // The "For a Good Editor" scrawl is a link, and nothing sits over it.
+  const hit = await page.evaluate(() => {
+    const r = document.querySelector(".nt-link img").getBoundingClientRect();
+    const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    const a = el && el.closest("a");
+    return a && a.href;
+  });
+  assert.equal(hit, "https://mohamedelsafty.com/", "the scrawl links to mohamedelsafty.com");
   const mb = await page.evaluate(() => { const s = document.getElementById("mailbox"); scrollTo(0, s.offsetTop + s.offsetHeight); return 0; });
   await page.waitForTimeout(3000);
   await page.fill("input[name=name]", "Test Person");
