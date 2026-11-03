@@ -812,7 +812,12 @@ function draw(B) {
 const renderSize = new THREE.Vector2();
 function frameCamera() {
   const s = stage;
-  const dpr = Math.min(devicePixelRatio || 1, Q.dpr);
+  // The canvas is two screens tall and multisampled, so on a big Retina
+  // display (2560 x 2880 CSS px on a 5K screen) full resolution is a
+  // 30-megapixel buffer that starves Chrome of GPU memory and leaves flat
+  // tiles across the page. Cap it near 12 megapixels: a laptop keeps 2x.
+  const MAX_PX = 12e6;
+  const dpr = Math.min(devicePixelRatio || 1, Q.dpr, Math.sqrt(MAX_PX / (s.width * s.height * 2)));
   // setPixelRatio calls setSize internally; avoid reallocating/clearing the
   // drawing buffer for every feed or strain update.
   if (renderer.getPixelRatio() !== dpr) renderer.setPixelRatio(dpr);

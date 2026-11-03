@@ -73,6 +73,39 @@
     top: var(--py);
   }
 }
+/* "For a Good Editor / Call 917-78…" and its arrow (Codex's ink, made the
+   same way as the lines above) link to mohamedelsafty.com. It stays plain
+   Sharpie on the wall: no underline or button, only the pointer and a hit
+   area wider than the ink so a thumb can find it. */
+.nt-link {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  display: block;
+  mix-blend-mode: multiply;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.nt-link img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.nt-link::after {
+  content: "";
+  position: absolute;
+  inset: -40px;
+}
+.nt-link:focus-visible {
+  outline: 4px dashed rgba(27, 26, 24, 0.5);
+  outline-offset: 24px;
+}
+@media (max-aspect-ratio: 1/1) {
+  .nt-link {
+    left: var(--px);
+    top: var(--py);
+  }
+}
 .mb-photo {
   position: absolute;
   inset: 0;
