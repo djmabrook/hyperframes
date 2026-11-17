@@ -33,6 +33,8 @@ export const CLIPS = {
     { title: "Blue Bird Bio", video: "media/com-03.mp4", poster: "media/com-03.jpg", colour: "#e6d84a", placeholder: false },
     { title: "Seamless", video: "media/com-04.mp4", poster: "media/com-04.jpg", colour: "#e04a4a", placeholder: false },
     { title: "NYC Public Schools", video: "media/com-05.mp4", poster: "media/com-05.jpg", colour: "#f27a41", placeholder: false },
+    { title: "NYC Public Schools", video: "media/com-07.mp4", poster: "media/com-07.jpg", colour: "#f27a41", placeholder: false },
+    { title: "NYC Public Schools", video: "media/com-08.mp4", poster: "media/com-08.jpg", colour: "#f27a41", placeholder: false },
     { title: "Mirror Launch", video: "media/com-01.mp4", poster: "media/com-01.jpg", colour: "#4c9a4c", placeholder: false },
   ],
 };
